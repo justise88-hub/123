@@ -865,7 +865,7 @@ void FullscreenView::openOnScreenOf(QWidget *w)
                 if (m_close) m_close->raise();
                 surface->updateGeometry();
                 surface->repaint();
-                if (surface->currentFrame().isNull() && surface->statusText().trimmed().isEmpty()) {
+                if (surface->currentFrame().isNull()) {
                     surface->setStatusText(T("Ожидание видеопотока…"));
                     surface->update();
                 }
@@ -1871,8 +1871,9 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
             .arg(all.size()).arg(online).arg(recording));
     };
     updateCamSummary();
-    connect(m_mgr, &CameraManager::changed, this, updateCamSummary);
-    connect(m_mgr, &CameraManager::statusChanged, this, updateCamSummary);
+    connect(m_mgr, &CameraManager::camerasChanged, this, updateCamSummary);
+    connect(m_mgr, &CameraManager::cameraStateChanged, this, [updateCamSummary](const QString &, CameraWorker::State) { updateCamSummary(); });
+    connect(m_mgr, &CameraManager::onlineChanged, this, updateCamSummary);
     lv->addWidget(camSummary);
     auto *statusFilter = new QComboBox(left);
     statusFilter->addItem(T("Все камеры"), 0);
@@ -1906,13 +1907,18 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
         out.setEncoding(QStringConverter::Utf8);
         out << QStringLiteral("Name;Group;Online;Recording;Quality;StreamUrl\n");
         for (const CameraEntry &c : m_mgr->cameras()) {
-            const QString url = c.liveUrl.trimmed().isEmpty() ? c.url : c.liveUrl;
-            out << c.name.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char(';')
-                << c.group.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char(';')
+            QString safeName = c.name;
+            safeName.replace(QLatin1Char(';'), QLatin1Char(','));
+            QString safeGroup = c.group;
+            safeGroup.replace(QLatin1Char(';'), QLatin1Char(','));
+            QString safeUrl = c.liveUrl.trimmed().isEmpty() ? c.url : c.liveUrl;
+            safeUrl.replace(QLatin1Char(';'), QLatin1Char(','));
+            out << safeName << QLatin1Char(';')
+                << safeGroup << QLatin1Char(';')
                 << (m_mgr->isOnline(c.id) ? QStringLiteral("online") : QStringLiteral("offline")) << QLatin1Char(';')
                 << (m_mgr->isStarted(c.id) ? QStringLiteral("recording") : QStringLiteral("stopped")) << QLatin1Char(';')
                 << c.viewQuality << QLatin1Char(';')
-                << url.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char('\n');
+                << safeUrl << QLatin1Char('\n');
         }
         emit message(T("Отчёт диагностики сохранён: %1").arg(path));
     });

@@ -3118,7 +3118,6 @@ QList<StreamOption> streamOptionsFor(const QString &url)
             o.url = m.captured(1) + QString::number(s) + m.captured(3);
             out.append(o);
         }
-    }
         return out;
     }
 

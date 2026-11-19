@@ -1825,10 +1825,10 @@ void VideoGrid::openFullscreen(VideoCell *cell)
     // Для режима Auto берём основной поток только если он отличается от уже запущенного
     // и не пуст; иначе сохраняем текущий поток ячейки без сброса кадра.
     const QUrl mainUrl(e->url.trimmed());
-    const bool hasCurrentFrame = cell->m_surface && !cell->m_surface->currentFrame().isNull();
+    const bool hasCurrentFrame = !cell->snapshot().isNull();
     const bool shouldSwitchUrl = (e->viewQuality == 0)
         && mainUrl.isValid() && !mainUrl.isEmpty()
-        && cell->m_url != mainUrl
+        && cell->url() != mainUrl
         && !hasCurrentFrame;
     if (shouldSwitchUrl) {
         cell->setCamera(e->id, e->name, mainUrl, true,
@@ -1845,7 +1845,7 @@ void VideoGrid::openFullscreen(VideoCell *cell)
         if (!current || safeCell->cameraId() != cameraId)
             return;
         const QUrl restoredUrl = urlFor(*current, safeCell);
-        if (restoredUrl.isValid() && !restoredUrl.isEmpty() && safeCell->m_url != restoredUrl) {
+        if (restoredUrl.isValid() && !restoredUrl.isEmpty() && safeCell->url() != restoredUrl) {
             safeCell->setCamera(current->id, current->name, restoredUrl, true,
                                 current->showTime, current->brightness,
                                 current->audio, current->fillCell);
