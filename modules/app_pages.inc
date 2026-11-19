@@ -865,6 +865,10 @@ void FullscreenView::openOnScreenOf(QWidget *w)
                 if (m_close) m_close->raise();
                 surface->updateGeometry();
                 surface->repaint();
+                if (surface->currentFrame().isNull() && surface->statusText().trimmed().isEmpty()) {
+                    surface->setStatusText(T("Ожидание видеопотока…"));
+                    surface->update();
+                }
             }
         });
     }

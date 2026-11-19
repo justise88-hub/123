@@ -1821,31 +1821,36 @@ void VideoGrid::openFullscreen(VideoCell *cell)
     if (!e)
         return;
 
-    // Smart Auto mode: use the main stream in a fullscreen view, then return
-    // to the lighter substream when the view is closed and the grid is restored.
-    const bool switchToMainForFullscreen = e->viewQuality == 0
-        && !e->liveUrl.isEmpty() && m_count > 1;
     const QString title = e->name;
-    if (switchToMainForFullscreen) {
-        cell->setCamera(e->id, e->name, QUrl(e->url), true,
+    // Для режима Auto берём основной поток только если он отличается от уже запущенного
+    // и не пуст; иначе сохраняем текущий поток ячейки без сброса кадра.
+    const QUrl mainUrl(e->url.trimmed());
+    const bool hasCurrentFrame = cell->m_surface && !cell->m_surface->currentFrame().isNull();
+    const bool shouldSwitchUrl = (e->viewQuality == 0)
+        && mainUrl.isValid() && !mainUrl.isEmpty()
+        && cell->m_url != mainUrl
+        && !hasCurrentFrame;
+    if (shouldSwitchUrl) {
+        cell->setCamera(e->id, e->name, mainUrl, true,
                         e->showTime, e->brightness, e->audio, e->fillCell);
     }
 
     auto *fs = new FullscreenView(cell);
     fs->setWindowTitle(title);
-    if (switchToMainForFullscreen) {
-        QPointer<VideoCell> safeCell(cell);
-        connect(fs, &QObject::destroyed, this, [this, safeCell, cameraId] {
-            if (!safeCell)
-                return;
-            const CameraEntry *current = m_mgr->find(cameraId);
-            if (!current || safeCell->cameraId() != cameraId)
-                return;
-            safeCell->setCamera(current->id, current->name, urlFor(*current, safeCell), true,
+    QPointer<VideoCell> safeCell(cell);
+    connect(fs, &QObject::destroyed, this, [this, safeCell, cameraId] {
+        if (!safeCell)
+            return;
+        const CameraEntry *current = m_mgr->find(cameraId);
+        if (!current || safeCell->cameraId() != cameraId)
+            return;
+        const QUrl restoredUrl = urlFor(*current, safeCell);
+        if (restoredUrl.isValid() && !restoredUrl.isEmpty() && safeCell->m_url != restoredUrl) {
+            safeCell->setCamera(current->id, current->name, restoredUrl, true,
                                 current->showTime, current->brightness,
                                 current->audio, current->fillCell);
-        });
-    }
+        }
+    });
     fs->openOnScreenOf(window());
 }
 
