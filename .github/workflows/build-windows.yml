@@ -1,0 +1,127 @@
+name: Build PSVMS for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify source artwork assets
+        shell: pwsh
+        run: |
+          $required = @(
+            "assets/psvms_avatar.png",
+            "assets/psvms_wallpaper.jpg",
+            "assets/psvms_splash.png"
+          )
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) {
+              throw "Required artwork asset is missing: $file"
+            }
+          }
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
+          cache: true
+
+      - name: Install FFmpeg and OpenSSL (vcpkg)
+        shell: pwsh
+        run: |
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT "vcpkg.exe"
+          $maxAttempts = 4
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "Installing FFmpeg and OpenSSL (attempt $attempt of $maxAttempts)..."
+            & $vcpkg install "ffmpeg[core,avcodec,avformat]:x64-windows" openssl:x64-windows
+            $installExitCode = $LASTEXITCODE
+            if ($installExitCode -eq 0) {
+              Write-Host "FFmpeg and OpenSSL are installed."
+              break
+            }
+            if ($attempt -eq $maxAttempts) {
+              throw "vcpkg install failed after $maxAttempts attempts (exit code $installExitCode)."
+            }
+            $delay = 15 * $attempt
+            Write-Warning "vcpkg failed with exit code $installExitCode. Retrying in $delay seconds; transient download errors such as HTTP 504 may recover."
+            Start-Sleep -Seconds $delay
+          }
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
+
+      - name: Build diagnostic configuration (with PDB symbols)
+        run: cmake --build build --config RelWithDebInfo --parallel 2
+
+      - name: Collect Qt libraries next to the exe
+        shell: pwsh
+        run: |
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations build\RelWithDebInfo\PSVMS.exe
+
+      - name: Verify embedded artwork inputs
+        shell: pwsh
+        run: |
+          $required = @(
+            "branding.qrc",
+            "assets/psvms_avatar.png",
+            "assets/psvms_wallpaper.jpg",
+            "assets/psvms_splash.png",
+            "assets/icons/camera.png",
+            "PSVMS.ico"
+          )
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) {
+              throw "Required embedded design asset is missing: $file"
+            }
+          }
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: PSVMS-windows
+          path: |
+            build/RelWithDebInfo/
+            build/RelWithDebInfo/PSVMS.pdb
+
+      - name: Package complete source project
+        shell: pwsh
+        run: |
+          $items = @(
+            "CMakeLists.txt",
+            "psvms.cpp",
+            "branding.qrc",
+            "app_icon.rc",
+            "build_windows.bat",
+            "create_shortcuts.ps1",
+            "modules",
+            "README.md",
+            "README_RU.md",
+            "SHA256SUMS.txt",
+            "PSVMS.ico",
+            "PSVMS_icon.png",
+            "assets",
+            ".github"
+          )
+          foreach ($item in $items) {
+            if (-not (Test-Path $item)) {
+              throw "Source package input is missing: $item"
+            }
+          }
+          Compress-Archive -Path $items -DestinationPath "PSVMS-source-project.zip" -Force
+
+      - name: Upload complete source project
+        uses: actions/upload-artifact@v4
+        with:
+          name: PSVMS-source-project
+          path: PSVMS-source-project.zip
