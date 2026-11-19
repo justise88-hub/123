@@ -3119,6 +3119,55 @@ QList<StreamOption> streamOptionsFor(const QString &url)
             out.append(o);
         }
     }
+        return out;
+    }
+
+    // Reolink: ...h264Preview_01_main / _sub
+    static const QRegularExpression reolink(QStringLiteral("^(.*h264Preview_\\d+_)(main|sub)(.*)$"),
+                                            QRegularExpression::CaseInsensitiveOption);
+    m = reolink.match(url);
+    if (m.hasMatch()) {
+        const char *kinds[2] = {"main", "sub"};
+        for (int s = 0; s <= 1; ++s) {
+            StreamOption o;
+            o.label = kindName(s) + QStringLiteral(" (%1)").arg(QLatin1String(kinds[s]));
+            o.url = m.captured(1) + QLatin1String(kinds[s]) + m.captured(3);
+            out.append(o);
+        }
+        return out;
+    }
+
+    // Uniview: .../unicast/c1/s0/live и .../s1/live
+    static const QRegularExpression uniview(QStringLiteral("^(.*\\/unicast\\/c\\d+\\/s)([01])(\\/live.*)$"),
+                                            QRegularExpression::CaseInsensitiveOption);
+    m = uniview.match(url);
+    if (m.hasMatch()) {
+        for (int s = 0; s <= 1; ++s) {
+            StreamOption o;
+            o.label = kindName(s) + QStringLiteral(" (s%1)").arg(s);
+            o.url = m.captured(1) + QString::number(s) + m.captured(3);
+            out.append(o);
+        }
+        return out;
+    }
+
+    // Axis: ...media.amp?streamprofile=Quality
+    static const QRegularExpression axis(QStringLiteral("^(.*[?&]streamprofile=)([^&]+)(.*)$"),
+                                         QRegularExpression::CaseInsensitiveOption);
+    m = axis.match(url);
+    if (m.hasMatch()) {
+        const QPair<QString, QString> profiles[2] = {
+            {kindName(0) + QStringLiteral(" (Quality)"), QStringLiteral("Quality")},
+            {kindName(1) + QStringLiteral(" (Mobile)"),  QStringLiteral("Mobile")}
+        };
+        for (int s = 0; s < 2; ++s) {
+            StreamOption o;
+            o.label = profiles[s].first;
+            o.url = m.captured(1) + profiles[s].second + m.captured(3);
+            out.append(o);
+        }
+        return out;
+    }
     return out;
 }
 

@@ -1843,6 +1843,75 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     title->setObjectName(QStringLiteral("panelTitle"));
     lv->addWidget(title);
     lv->addWidget(wrap(m_search, 8, 8, 8, 6));
+    auto *camSummary = new QLabel(left);
+    camSummary->setObjectName(QStringLiteral("camSummaryBadge"));
+    camSummary->setStyleSheet(QStringLiteral(
+        "QLabel#camSummaryBadge {"
+        "  color: #C5CDD8;"
+        "  background: #141820;"
+        "  border: 1px solid #262E3D;"
+        "  border-radius: 4px;"
+        "  padding: 5px 8px;"
+        "  margin: 0 8px 6px 8px;"
+        "  font-size: 11px;"
+        "}"
+    ));
+    auto updateCamSummary = [this, camSummary] {
+        const auto all = m_mgr->cameras();
+        int online = 0, recording = 0;
+        for (const CameraEntry &c : all) {
+            if (m_mgr->isOnline(c.id)) ++online;
+            if (m_mgr->isStarted(c.id)) ++recording;
+        }
+        camSummary->setText(T("Всего: %1  •  В сети: %2  •  Запись: %3")
+            .arg(all.size()).arg(online).arg(recording));
+    };
+    updateCamSummary();
+    connect(m_mgr, &CameraManager::changed, this, updateCamSummary);
+    connect(m_mgr, &CameraManager::statusChanged, this, updateCamSummary);
+    lv->addWidget(camSummary);
+    auto *statusFilter = new QComboBox(left);
+    statusFilter->addItem(T("Все камеры"), 0);
+    statusFilter->addItem(T("Только в сети"), 1);
+    statusFilter->addItem(T("Только не в сети"), 2);
+    statusFilter->addItem(T("На записи"), 3);
+    statusFilter->setStyleSheet(QStringLiteral(
+        "QComboBox { background:#141820; color:#D5DCE6; border:1px solid #262E3D; border-radius:4px; padding:4px 8px; margin:0 8px 6px 8px; font-size:11px; }"
+        "QComboBox QAbstractItemView { background:#141820; color:#D5DCE6; selection-background-color:#262E3D; }"
+    ));
+    lv->addWidget(statusFilter);
+
+    auto *exportDiagBtn = new QPushButton(T("Отчёт диагностики…"), left);
+    exportDiagBtn->setStyleSheet(QStringLiteral(
+        "QPushButton { background:#181D27; color:#F5B700; border:1px solid #2E384B; border-radius:4px; padding:5px 8px; margin:0 8px 6px 8px; font-size:11px; font-weight:600; }"
+        "QPushButton:hover { background:#202735; border-color:#F5B700; }"
+    ));
+    lv->addWidget(exportDiagBtn);
+    connect(exportDiagBtn, &QPushButton::clicked, this, [this] {
+        const QString path = QFileDialog::getSaveFileName(
+            this, T("Сохранить отчёт диагностики камер"),
+            QStringLiteral("psvms_cameras_diagnostics.csv"),
+            T("CSV-таблица (*.csv);;Текстовый файл (*.txt)"));
+        if (path.isEmpty()) return;
+        QFile f(path);
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            emit message(T("Не удалось сохранить отчёт: %1").arg(f.errorString()));
+            return;
+        }
+        QTextStream out(&f);
+        out.setEncoding(QStringConverter::Utf8);
+        out << QStringLiteral("Name;Group;Online;Recording;Quality;StreamUrl\n");
+        for (const CameraEntry &c : m_mgr->cameras()) {
+            const QString url = c.liveUrl.trimmed().isEmpty() ? c.url : c.liveUrl;
+            out << c.name.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char(';')
+                << c.group.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char(';')
+                << (m_mgr->isOnline(c.id) ? QStringLiteral("online") : QStringLiteral("offline")) << QLatin1Char(';')
+                << (m_mgr->isStarted(c.id) ? QStringLiteral("recording") : QStringLiteral("stopped")) << QLatin1Char(';')
+                << c.viewQuality << QLatin1Char(';')
+                << url.replace(QLatin1Char(';'), QLatin1Char(',')) << QLatin1Char('\n');
+        }
+        emit message(T("Отчёт диагностики сохранён: %1").arg(path));
+    });
     lv->addWidget(m_tree, 1);
     left->setMinimumWidth(190);
     left->setMaximumWidth(260);
@@ -2014,9 +2083,28 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     connect(refreshBtn, &QToolButton::clicked, this, [this] {
         m_grid->refreshCells();
         m_mgr->probeNow();
+        emit message(T("Обновление потоков и проверка доступности камер…"));
     });
     connect(panelBtn, &QToolButton::toggled, this, &LiveViewPage::setPanelVisible);
     connect(m_search, &QLineEdit::textChanged, this, &LiveViewPage::applyFilter);
+    connect(statusFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, statusFilter](int) {
+        const int mode = statusFilter->currentData().toInt();
+        for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
+            QTreeWidgetItem *grp = m_tree->topLevelItem(i);
+            int visibleChildren = 0;
+            for (int j = 0; j < grp->childCount(); ++j) {
+                QTreeWidgetItem *ch = grp->child(j);
+                const QString cid = ch->data(0, Qt::UserRole).toString();
+                bool ok = true;
+                if (mode == 1) ok = m_mgr->isOnline(cid);
+                else if (mode == 2) ok = !m_mgr->isOnline(cid);
+                else if (mode == 3) ok = m_mgr->isStarted(cid);
+                ch->setHidden(!ok);
+                if (ok) ++visibleChildren;
+            }
+            grp->setHidden(visibleChildren == 0);
+        }
+    });
     connect(m_tree, &QWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
         QTreeWidgetItem *item = m_tree->itemAt(pos);
         if (!item) return;
@@ -2054,6 +2142,22 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
                 }
             });
         } else {
+            QAction *diagCamera = menu.addAction(T("Проверить поток и адрес"));
+            connect(diagCamera, &QAction::triggered, this, [this, cameraId] {
+                if (const CameraEntry *cur = m_mgr->find(cameraId)) {
+                    m_mgr->probeNow();
+                    const bool on = m_mgr->isOnline(cur->id);
+                    const bool rec = m_mgr->isStarted(cur->id);
+                    const QString addr = cur->liveUrl.trimmed().isEmpty() ? cur->url : cur->liveUrl;
+                    QMessageBox::information(this, T("Диагностика камеры"),
+                        T("Камера: %1\nСостояние: %2\nЗапись: %3\nПоток: %4")
+                            .arg(cur->name)
+                            .arg(on ? T("В сети") : T("Нет связи / проверка"))
+                            .arg(rec ? T("Активна") : T("Остановлена"))
+                            .arg(addr));
+                }
+            });
+            menu.addSeparator();
             QAction *renameCamera = menu.addAction(T("Переименовать камеру…"));
             connect(renameCamera, &QAction::triggered, this, [this, cameraId] {
                 const CameraEntry *current = m_mgr->find(cameraId);
@@ -2090,6 +2194,19 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
             });
         }
         if (isGroup) {
+            menu.addSeparator();
+            QAction *startGrpRec = menu.addAction(T("Запустить запись для группы"));
+            connect(startGrpRec, &QAction::triggered, this, [this, targets] {
+                for (const CameraEntry &entry : targets)
+                    m_mgr->startCamera(entry.id);
+                emit message(T("Запуск записи для группы (%1)").arg(targets.size()));
+            });
+            QAction *stopGrpRec = menu.addAction(T("Остановить запись для группы"));
+            connect(stopGrpRec, &QAction::triggered, this, [this, targets] {
+                for (const CameraEntry &entry : targets)
+                    m_mgr->stopCamera(entry.id);
+                emit message(T("Остановка записи для группы (%1)").arg(targets.size()));
+            });
             menu.addSeparator();
             QMenu *streamMenu = menu.addMenu(T("Поток для всей группы"));
             auto *streamActions = new QActionGroup(streamMenu);

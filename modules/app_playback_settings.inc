@@ -891,17 +891,17 @@ SettingsPage::SettingsPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
         bar->setMinimumHeight(48);
         bar->setIconSize(QSize(18, 18));
         bar->setStyleSheet(QStringLiteral(
-            "QTabBar::tab { min-height:42px; padding:10px 18px; margin:3px 4px 0 0; "
-            "background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #0c2948,stop:1 #211b48); color:#d5f4ff; border:1px solid #286b9d; "
-            "border-radius:9px; font-size:10pt; font-weight:750; }"
-            "QTabBar::tab:hover { background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #145c87,stop:1 #542777); color:#ffffff; border:1px solid #e879ff; }"
-            "QTabBar::tab:selected { background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #087eaa,stop:1 #54277d); color:#ffffff; "
-            "border:1px solid #65e5ff; border-bottom:3px solid #e879ff; }"
-            "QTabBar QToolButton { background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #123e68,stop:1 #3d1d70); color:#b9f8ff; "
-            "border:1px solid #39cfff; border-radius:9px; min-width:42px; "
-            "max-width:42px; min-height:40px; max-height:40px; margin:3px; padding:2px; }"
-            "QTabBar QToolButton:hover { background:#175e91; color:#ffffff; border:1px solid #ff79ed; }"
-            "QTabBar QToolButton:pressed { background:#6c2cbd; border:1px solid #ff9af4; }"));
+            "QTabBar::tab { min-height:38px; padding:8px 16px; margin:3px 4px 0 0; "
+            "background:#181D27; color:#C8D0DC; border:1px solid #2A3242; "
+            "border-radius:6px; font-size:10pt; font-weight:600; }"
+            "QTabBar::tab:hover { background:#222A38; color:#F5B700; border:1px solid #455169; }"
+            "QTabBar::tab:selected { background:#232A38; color:#F5B700; "
+            "border:1px solid #F5B700; border-bottom:2px solid #F5B700; }"
+            "QTabBar QToolButton { background:#181D27; color:#D5DCE6; "
+            "border:1px solid #2A3242; border-radius:6px; min-width:36px; "
+            "max-width:36px; min-height:36px; max-height:36px; margin:3px; padding:2px; }"
+            "QTabBar QToolButton:hover { background:#222A38; color:#F5B700; border:1px solid #F5B700; }"
+            "QTabBar QToolButton:pressed { background:#F5B700; color:#111317; }"));
     }
     tabs->addTab(buildGeneralTab(), T("Общие"));
     tabs->addTab(buildVideoTab(), T("Видео и папки"));
@@ -996,6 +996,7 @@ QWidget *SettingsPage::buildGeneralTab()
     form->addRow(T("Размер кнопок и элементов (после перезапуска)"), manualElements);
 
     auto *resetScaling = new QPushButton(T("Вернуть масштабирование к стандартным настройкам"), this);
+    resetScaling->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 12px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
     resetScaling->setToolTip(T("Сбросить пресет, ручной масштаб, размер текста и элементов до 100%"));
     connect(resetScaling, &QPushButton::clicked, this,
             [scale, manualInterface, manualText, manualElements]() {
@@ -1008,6 +1009,7 @@ QWidget *SettingsPage::buildGeneralTab()
     form->addRow(QString(), resetScaling);
 
     auto *applyScaling = new QPushButton(T("Применить изменения"), this);
+    applyScaling->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
     applyScaling->setToolTip(T("Сохранить выбранные параметры масштабирования"));
     connect(applyScaling, &QPushButton::clicked, this,
             [scale, manualInterface, manualText, manualElements]() {
@@ -1396,7 +1398,7 @@ QWidget *SettingsPage::buildUsersTab()
         button->setFont(buttonFont);
         button->setMinimumSize(0, 36);
         button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        button->setStyleSheet(QStringLiteral("QPushButton { padding: 5px 8px; }"));
+        button->setStyleSheet(QStringLiteral("QPushButton { background:#1F242D; color:#ECF0F5; border:1px solid #343C4A; border-radius:5px; padding: 6px 10px; font-weight:600; } QPushButton:hover { background:#2A313D; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#111317; } QPushButton:disabled { background:#151921; color:#697282; border-color:#232936; }"));
     }
     auto *buttons = new QGridLayout;
     buttons->setHorizontalSpacing(8);
@@ -1440,7 +1442,27 @@ QWidget *SettingsPage::buildUsersTab()
     connect(idleEnabled, &QCheckBox::toggled, this, [saveIdle](bool) { saveIdle(); });
     connect(idleMinutes, qOverload<int>(&QSpinBox::valueChanged), this, [saveIdle](int) { saveIdle(); });
 
+    auto *switchRow = new QHBoxLayout;
+    auto *switchLabel = new QLabel(T("Текущая учётная запись в сеансе: <b>%1</b>")
+        .arg(Users::current().name.isEmpty() ? T("не выбран") : Users::current().name), this);
+    switchLabel->setStyleSheet(QStringLiteral("color:#D5DCE6;"));
+    auto *switchBtn = new QPushButton(T("Сменить пользователя…"), this);
+    switchBtn->setStyleSheet(QStringLiteral(
+        "QPushButton { background:#252C38; color:#F5B700; border:1px solid #F5B700; border-radius:5px; padding:6px 12px; font-weight:700; }"
+        "QPushButton:hover { background:#F5B700; color:#111317; }"
+    ));
+    connect(switchBtn, &QPushButton::clicked, this, [this, switchLabel] {
+        if (QWidget *w = window()) {
+            QMetaObject::invokeMethod(w, "switchUser", Qt::QueuedConnection);
+        }
+        switchLabel->setText(T("Текущая учётная запись в сеансе: <b>%1</b>")
+            .arg(Users::current().name.isEmpty() ? T("не выбран") : Users::current().name));
+    });
+    switchRow->addWidget(switchLabel, 1);
+    switchRow->addWidget(switchBtn);
+
     auto *lay = new QVBoxLayout;
+    lay->addLayout(switchRow);
     lay->addWidget(idleBox);
     lay->addLayout(buttons);
     lay->addWidget(m_users, 1);
@@ -1584,7 +1606,9 @@ QWidget *SettingsPage::buildBackupTab()
     info->setWordWrap(true);
 
     auto *exportBtn = new QPushButton(T("Создать резервную копию…"), this);
+    exportBtn->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
     auto *importBtn = new QPushButton(T("Восстановить из копии…"), this);
+    importBtn->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 14px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
 
     connect(exportBtn, &QPushButton::clicked, this, [this] {
         const QString def = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
@@ -1717,7 +1741,7 @@ QWidget *SettingsPage::buildLicenseTab()
         button->setFont(buttonFont);
         button->setMinimumSize(0, 38);
         button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        button->setStyleSheet(QStringLiteral("QPushButton { padding: 6px 10px; }"));
+        button->setStyleSheet(QStringLiteral("QPushButton { background:#1F242D; color:#ECF0F5; border:1px solid #343C4A; border-radius:5px; padding: 6px 12px; font-weight:600; } QPushButton:hover { background:#2A313D; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#111317; } QPushButton:disabled { background:#151921; color:#697282; border-color:#232936; }"));
     }
     auto *buttons = new QGridLayout;
     buttons->setHorizontalSpacing(8);

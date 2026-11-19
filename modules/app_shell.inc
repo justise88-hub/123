@@ -82,6 +82,24 @@ public:
             QDialog#loginDialog QComboBox:hover, QDialog#loginDialog QLineEdit#passwordInput:focus {
                 border:1px solid #F5B700; background:#151922;
             }
+            QDialog#loginDialog QComboBox {
+                color:#F0F4F8; background:#131720; border:1px solid #30394A;
+                border-radius:6px; padding:7px 12px; min-height:42px;
+                font-family:"Segoe UI", sans-serif; font-size:10pt; font-weight:600;
+            }
+            QDialog#loginDialog QComboBox:hover {
+                border-color:#F5B700; background:#181E29;
+            }
+            QDialog#loginDialog QComboBox:focus {
+                border-color:#F5B700; background:#181E29;
+            }
+            QDialog#loginDialog QComboBox::drop-down {
+                border:0; width:26px; background:transparent;
+            }
+            QLabel#loginUserMeta {
+                color:#A7B1C2; background:#141820; border:1px solid #262E3D;
+                border-radius:6px; padding:8px 11px; font-size:9pt;
+            }
             QDialog#loginDialog QComboBox QAbstractItemView {
                 color:#ECF0F5; background:#171B23; selection-color:#111317;
                 selection-background-color:#F5B700; border:1px solid #323B4B;
@@ -203,7 +221,26 @@ public:
         m_form->setHorizontalSpacing(14);
         m_form->setVerticalSpacing(11);
         m_form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        auto *userMeta = new QLabel(card);
+        userMeta->setObjectName(QStringLiteral("loginUserMeta"));
+        userMeta->setWordWrap(true);
+        auto refreshUserMeta = [this, userMeta] {
+            const UserInfo u = Users::find(m_user->currentData().toString());
+            if (!u.valid()) {
+                userMeta->setText(T("Учётная запись не выбрана"));
+                return;
+            }
+            const QString roleName = u.isDeveloper() ? T("Разработчик · полный доступ")
+                                 : u.isGuest() ? T("Гость · только просмотр")
+                                 : u.isAdmin() ? T("Администратор · управление и настройки")
+                                 : T("Оператор · мониторинг и архив");
+            const QString authState = u.hasPassword ? T("Требуется пароль") : T("Вход без пароля");
+            userMeta->setText(QStringLiteral("<b>%1</b> &nbsp;•&nbsp; <span style='color:#F5B700;'>%2</span> &nbsp;•&nbsp; %3")
+                .arg(u.name.toHtmlEscaped(), roleName.toHtmlEscaped(), authState.toHtmlEscaped()));
+        };
+
         m_form->addRow(T("Пользователь"), m_user);
+        m_form->addRow(QString(), userMeta);
         m_form->addRow(T("Пароль"), m_passRow);
         m_form->addRow(QString(), m_remember);
         cardLayout->addLayout(m_form);
@@ -219,8 +256,12 @@ public:
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
         root->addWidget(buttons);
 
-        connect(m_user, &QComboBox::currentIndexChanged, this, [this] { updatePasswordRow(); });
+        connect(m_user, &QComboBox::currentIndexChanged, this, [this, refreshUserMeta] {
+            updatePasswordRow();
+            refreshUserMeta();
+        });
         updatePasswordRow();
+        refreshUserMeta();
         resize(540, sizeHint().height());
     }
 

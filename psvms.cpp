@@ -2550,6 +2550,7 @@ private:
     qint64 m_connectStartedMs = 0;
     bool m_firstFrameReceived = false;
     int m_retryDelayMs = 3000; // экспоненциальная пауза переподключения: 3–30 секунд
+    int m_retryAttempt = 0;    // счётчик попыток переподключения с момента успешного потока
     QLabel *m_flash = nullptr;
     QGraphicsOpacityEffect *m_flashFx = nullptr;
     QGraphicsDropShadowEffect *m_frameGlow = nullptr;
@@ -2606,6 +2607,10 @@ public slots:
     void refreshCells();
     void restoreLayout();                         // последнее расположение камер
     void closeSelectedCell();                      // горячая клавиша Delete
+    void setPatrolEnabled(bool enabled);           // циклический автообход камер по сетке
+    void setPatrolIntervalSec(int sec);            // интервал автообхода в секундах
+    void setGridStreamQuality(int quality);        // 0=авто, 1=основной поток, 2=подпоток для активных камер
+    void setGridLayoutPreset(int count);           // быстрое переключение раскладки (1, 4, 9, 16)
 
 signals:
     void message(const QString &text);
@@ -2635,6 +2640,9 @@ private:
     QList<VideoCell *> m_cells;
     VideoCell *m_selected = nullptr;
     QTimer *m_saveTimer = nullptr;
+    QTimer *m_patrolTimer = nullptr;
+    bool m_patrolEnabled = false;
+    int m_patrolIntervalSec = 8;
     int m_count = 4;
     bool m_restoring = false;
 };

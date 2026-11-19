@@ -185,6 +185,7 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
         writePsvmsLog(QStringLiteral("RTSP: получен первый декодированный кадр; камера id=%1 host=%2 connectToFirstFrame=%3 ms")
             .arg(m_cameraId, m_url.host()).arg(elapsed));
         m_retryDelayMs = 3000;
+        m_retryAttempt = 0;
         if (m_retry->isActive()) m_retry->stop();
     });
 
@@ -336,6 +337,7 @@ void VideoCell::startPlayback()
     m_retry->stop();
     if (m_connectTimeout) m_connectTimeout->stop();
     m_retryDelayMs = 3000;
+    m_retryAttempt = 0;
     m_firstFrameReceived = false;
     m_connectStartedMs = 0;
     m_started = true;
@@ -370,6 +372,8 @@ void VideoCell::stopPlayback()
     m_surface->setCameraRunning(false);
     m_retry->stop();
     if (m_connectTimeout) m_connectTimeout->stop();
+    m_retryDelayMs = 3000;
+    m_retryAttempt = 0;
     hideAuthPrompt();
     m_player->stop();
     m_player->setSource(QUrl());
@@ -388,6 +392,8 @@ void VideoCell::clear(bool notify)
     m_surface->setCameraRunning(false);
     m_retry->stop();
     if (m_connectTimeout) m_connectTimeout->stop();
+    m_retryDelayMs = 3000;
+    m_retryAttempt = 0;
     hideAuthPrompt();
     m_player->stop();
     m_player->setSource(QUrl());
@@ -485,9 +491,16 @@ void VideoCell::scheduleReconnect()
     if (!m_started || !m_retry || m_retry->isActive())
         return;
 
-    writePsvmsLog(QStringLiteral("Видеопоток: переподключение камеры id=%1 через %2 мс")
-        .arg(m_cameraId).arg(m_retryDelayMs));
-    m_retry->start(m_retryDelayMs);
+    ++m_retryAttempt;
+    const int delayMs = m_retryDelayMs;
+    const int sec = qMax(1, (delayMs + 500) / 1000);
+    if (m_surface) {
+        m_surface->setStatusText(T("Повтор #%1 через %2 с…").arg(m_retryAttempt).arg(sec));
+        m_surface->setLinkQuality(VideoSurface::LinkQuality::Connecting);
+    }
+    writePsvmsLog(QStringLiteral("Видеопоток: переподключение камеры id=%1 попытка=#%2 через %3 мс")
+        .arg(m_cameraId).arg(m_retryAttempt).arg(delayMs));
+    m_retry->start(delayMs);
     m_retryDelayMs = qMin(m_retryDelayMs * 2, 30000);
 }
 
@@ -639,6 +652,50 @@ void VideoCell::updateIdlePage()
         m_hint->setText(m_titleText + QStringLiteral("\n") + T("Нажмите ▶, чтобы запустить"));
 }
 
+
+static QPixmap makeHikCameraCellArtwork(const QSize &sz)
+{
+    const int side = qMax(24, qMin(sz.width(), sz.height()));
+    QPixmap pm(side, side);
+    pm.fill(Qt::transparent);
+
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    const qreal pad = side * 0.10;
+    const QRectF box(pad, pad, side - 2.0 * pad, side - 2.0 * pad);
+
+    p.setBrush(QColor(0x18, 0x1D, 0x27, 225));
+    p.setPen(QPen(QColor(0x34, 0x3C, 0x4A), 1.5));
+    p.drawRoundedRect(box, side * 0.16, side * 0.16);
+
+    const qreal arm = side * 0.11;
+    p.setPen(QPen(QColor(0xF5, 0xB7, 0x00), 1.8, Qt::SolidLine, Qt::RoundCap));
+    p.drawLine(QPointF(box.left() + 6, box.top() + 6 + arm), QPointF(box.left() + 6, box.top() + 6));
+    p.drawLine(QPointF(box.left() + 6, box.top() + 6), QPointF(box.left() + 6 + arm, box.top() + 6));
+    p.drawLine(QPointF(box.right() - 6 - arm, box.bottom() - 6), QPointF(box.right() - 6, box.bottom() - 6));
+    p.drawLine(QPointF(box.right() - 6, box.bottom() - 6), QPointF(box.right() - 6, box.bottom() - 6 - arm));
+
+    const qreal cw = box.width() * 0.44;
+    const qreal ch = box.height() * 0.28;
+    const QRectF camBody(box.center().x() - cw * 0.56, box.center().y() - ch * 0.5, cw, ch);
+    p.setBrush(QColor(0x25, 0x2C, 0x38));
+    p.setPen(QPen(QColor(0xD5, 0xDC, 0xE6), 1.5));
+    p.drawRoundedRect(camBody, 4.0, 4.0);
+
+    QPolygonF lens;
+    lens << QPointF(camBody.right(), camBody.top() + ch * 0.22)
+         << QPointF(box.center().x() + cw * 0.62, camBody.top() + ch * 0.05)
+         << QPointF(box.center().x() + cw * 0.62, camBody.bottom() - ch * 0.05)
+         << QPointF(camBody.right(), camBody.bottom() - ch * 0.22);
+    p.setBrush(QColor(0xF5, 0xB7, 0x00));
+    p.setPen(QPen(QColor(0xF5, 0xB7, 0x00), 1.2));
+    p.drawPolygon(lens);
+
+    return pm;
+}
+
 void VideoCell::updateCellArtwork()
 {
     if (!m_logo || !m_idle)
@@ -654,7 +711,7 @@ void VideoCell::updateCellArtwork()
     // QLabel, которая могла переживать переключение simple/advanced mode.
     const int side = qBound(48, qMin(104, qMin((w - 20) / 3, (h - 20) / 3)), 104);
     m_logo->setAlignment(Qt::AlignCenter);
-    m_logo->setPixmap(makeCameraCellArtwork(QSize(side, side)));
+    m_logo->setPixmap(makeHikCameraCellArtwork(QSize(side, side)));
     const QRect overlayRect = m_idle->rect();
     if (m_logo->geometry() != overlayRect)
         m_logo->setGeometry(overlayRect);
@@ -1056,6 +1113,42 @@ VideoGrid::VideoGrid(CameraManager *mgr, QWidget *parent) : QWidget(parent), m_m
     m_saveTimer->setInterval(400);
     connect(m_saveTimer, &QTimer::timeout, this, [this] { saveLayoutNow(); });
 
+    m_patrolTimer = new QTimer(this);
+    m_patrolTimer->setInterval(m_patrolIntervalSec * 1000);
+    connect(m_patrolTimer, &QTimer::timeout, this, [this] {
+        if (!m_patrolEnabled || !m_mgr || m_count <= 0)
+            return;
+        if (QApplication::mouseButtons() != Qt::NoButton)
+            return;
+        const auto cams = m_mgr->cameras();
+        if (cams.isEmpty())
+            return;
+        QSet<QString> visibleIds;
+        for (int i = 0; i < qMin(m_count, m_cells.size()); ++i) {
+            if (!m_cells.at(i)->isEmpty())
+                visibleIds.insert(m_cells.at(i)->cameraId());
+        }
+        int startIdx = 0;
+        for (int i = 0; i < cams.size(); ++i) {
+            if (visibleIds.contains(cams.at(i).id))
+                startIdx = (i + 1) % cams.size();
+        }
+        const CameraEntry &nextCam = cams.at(startIdx);
+        VideoCell *target = nullptr;
+        for (int i = 0; i < qMin(m_count, m_cells.size()); ++i) {
+            if (m_cells.at(i) != m_selected && m_cells.at(i)->isVisible()) {
+                target = m_cells.at(i);
+                break;
+            }
+        }
+        if (!target && m_selected && m_selected->isVisible())
+            target = m_selected;
+        if (target && !visibleIds.contains(nextCam.id)) {
+            placeCamera(target, nextCam.id, true);
+            target->flash();
+        }
+    });
+
     ensureCells(m_count);
     applyLayout();
     select(m_cells.first());
@@ -1239,12 +1332,14 @@ QStringList VideoGrid::cameraIds() const
 QUrl VideoGrid::urlFor(const CameraEntry &e, const VideoCell *) const
 {
     bool wantMain;
-    if (e.viewQuality == 1)
+    if (m_count == 1)
+        wantMain = (e.viewQuality != 2);
+    else if (e.viewQuality == 1)
         wantMain = true;
     else if (e.viewQuality == 2)
         wantMain = false;
     else
-        wantMain = (m_count == 1);
+        wantMain = false;
     return QUrl((wantMain || e.liveUrl.isEmpty()) ? e.url : e.liveUrl);
 }
 
@@ -1527,6 +1622,19 @@ void VideoGrid::showCellMenu(VideoCell *cell, const QPoint &globalPos)
     menu.addSeparator();
 
     addGridAction(&menu, T("Настройки камеры…"), this, [this, id] { editCamera(id); });
+    if (!entry.liveUrl.isEmpty()) {
+        const bool usingMain = (cell->url() == QUrl(entry.url));
+        addGridAction(&menu,
+                      usingMain ? T("Переключить на подпоток") : T("Переключить на основной поток"),
+                      this,
+                      [this, id, usingMain] {
+                          if (const CameraEntry *e = m_mgr->find(id)) {
+                              CameraEntry c = *e;
+                              c.viewQuality = usingMain ? 2 : 1;
+                              m_mgr->update(c);
+                          }
+                      });
+    }
 
     // качество картинки
     QMenu *quality = menu.addMenu(T("Качество картинки"));
@@ -1630,6 +1738,38 @@ void VideoGrid::showCellMenu(VideoCell *cell, const QPoint &globalPos)
     else
         addGridAction(&menu, T("Запустить показ"), this, [pc] { if (pc) pc->startPlayback(); });
 
+    const QStringList savedTemplates = templateNames();
+    if (!savedTemplates.isEmpty()) {
+        QMenu *tplMenu = menu.addMenu(T("Раскладки камер"));
+        for (const QString &tplName : savedTemplates) {
+            addGridAction(tplMenu, tplName, this, [this, tplName] { applyTemplateNamed(tplName); });
+        }
+    }
+    QAction *patrolAct = addGridAction(&menu, T("Автообход камер (%1 с)").arg(m_patrolIntervalSec), this, [this] {
+        setPatrolEnabled(!m_patrolEnabled);
+    });
+    patrolAct->setCheckable(true);
+    patrolAct->setChecked(m_patrolEnabled);
+
+    QMenu *patrolIntMenu = menu.addMenu(T("Интервал автообхода"));
+    for (int secVal : {5, 8, 15, 30}) {
+        QAction *ia = addGridAction(patrolIntMenu, T("%1 с").arg(secVal), this, [this, secVal] {
+            setPatrolIntervalSec(secVal);
+        });
+        ia->setCheckable(true);
+        ia->setChecked(m_patrolIntervalSec == secVal);
+    }
+
+    QMenu *gridQualityMenu = menu.addMenu(T("Поток для всех в сетке"));
+    addGridAction(gridQualityMenu, T("Подпоток (экономия CPU и сети)"), this, [this] { setGridStreamQuality(2); });
+    addGridAction(gridQualityMenu, T("Основной поток (высокое качество)"), this, [this] { setGridStreamQuality(1); });
+    addGridAction(gridQualityMenu, T("Авто (подпоток в сетке, основной в 1×1)"), this, [this] { setGridStreamQuality(0); });
+
+    QMenu *gridPresetMenu = menu.addMenu(T("Быстрая раскладка сетки"));
+    for (int cnt : {1, 4, 9, 16}) {
+        addGridAction(gridPresetMenu, layoutLabel(cnt), this, [this, cnt] { setGridLayoutPreset(cnt); });
+    }
+
     menu.addSeparator();
     addGridAction(&menu, T("Закрыть камеру"), this, [pc] { if (pc) pc->clear(true); });
 
@@ -1718,6 +1858,64 @@ void VideoGrid::closeSelectedCell()
 QString VideoGrid::selectedCameraId() const
 {
     return m_selected ? m_selected->cameraId() : QString();
+}
+
+
+void VideoGrid::setPatrolEnabled(bool enabled)
+{
+    m_patrolEnabled = enabled;
+    if (m_patrolTimer) {
+        m_patrolTimer->setInterval(qMax(3, m_patrolIntervalSec) * 1000);
+        if (m_patrolEnabled)
+            m_patrolTimer->start();
+        else
+            m_patrolTimer->stop();
+    }
+    emit message(m_patrolEnabled
+        ? T("Автообход камер включён (интервал %1 с)").arg(m_patrolIntervalSec)
+        : T("Автообход камер остановлен"));
+}
+
+void VideoGrid::setPatrolIntervalSec(int sec)
+{
+    m_patrolIntervalSec = qBound(3, sec, 120);
+    if (m_patrolTimer) {
+        m_patrolTimer->setInterval(m_patrolIntervalSec * 1000);
+        if (m_patrolEnabled)
+            m_patrolTimer->start();
+    }
+    emit message(T("Интервал автообхода: %1 с").arg(m_patrolIntervalSec));
+}
+
+
+void VideoGrid::setGridStreamQuality(int quality)
+{
+    if (!m_mgr || m_count <= 0)
+        return;
+    int updatedCount = 0;
+    for (int i = 0; i < qMin(m_count, m_cells.size()); ++i) {
+        const VideoCell *cell = m_cells.at(i);
+        if (!cell || cell->isEmpty())
+            continue;
+        if (const CameraEntry *cur = m_mgr->find(cell->cameraId())) {
+            CameraEntry upd = *cur;
+            upd.viewQuality = quality;
+            m_mgr->update(upd);
+            ++updatedCount;
+        }
+    }
+    refreshCells();
+    const QString modeLabel = (quality == 2)
+        ? T("Подпоток")
+        : (quality == 1 ? T("Основной поток") : T("Авто"));
+    emit message(T("Режим «%1» применён к активным камерам (%2)").arg(modeLabel).arg(updatedCount));
+}
+
+
+void VideoGrid::setGridLayoutPreset(int count)
+{
+    setLayoutCount(count);
+    emit message(T("Раскладка переключена на %1").arg(layoutLabel(m_count)));
 }
 
 void VideoGrid::flushLayout()
@@ -2091,28 +2289,27 @@ void VideoSurface::paintEvent(QPaintEvent *)
         const QString fpsText = m_fps > 0
             ? QStringLiteral("%1 FPS").arg(m_fps)
             : QStringLiteral("… FPS");
-        const int fpsW = QFontMetrics(f).horizontalAdvance(fpsText) + 22;
+        const int fpsW = QFontMetrics(f).horizontalAdvance(fpsText) + 20;
         const QRect fpsBox(8, 8, fpsW, 24);
-        p.setPen(QPen(QColor(0x75, 0xa8, 0x35, 220), 1));
-        p.setBrush(QColor(8, 16, 6, 190));
-        p.drawRoundedRect(fpsBox, 5, 5);
-        p.setPen(QColor(0xd7, 0xff, 0x70));
+        p.setPen(QPen(QColor(245, 183, 0, 210), 1));
+        p.setBrush(QColor(16, 19, 24, 215));
+        p.drawRoundedRect(fpsBox, 4, 4);
+        p.setPen(QColor(255, 213, 79));
         p.drawText(fpsBox, Qt::AlignCenter, fpsText);
     }
 
     // Небольшой фирменный индикатор работающей камеры — всегда в правом верхнем углу.
     // Рисуется на поверхности видео, поэтому остаётся на месте и в полноэкранном режиме.
     if (m_cameraRunning && width() >= 48 && height() >= 36) {
-        const QRect badge(width() - 42, 8, 34, 27);
-        p.setPen(QPen(QColor(0x28, 0xc8, 0xff, 230), 1));
-        p.setBrush(QColor(24, 25, 27, 205));
-        p.drawRoundedRect(badge, 5, 5);
+        const QRect badge(width() - 42, 8, 34, 26);
+        p.setPen(QPen(QColor(245, 183, 0, 220), 1));
+        p.setBrush(QColor(16, 19, 24, 215));
+        p.drawRoundedRect(badge, 4, 4);
 
-        // Камера: серо-стальной корпус с яркими голубыми неоновыми гранями.
         const qreal cx = badge.center().x();
         const qreal cy = badge.center().y();
-        p.setPen(QPen(QColor(0x8c, 0xf2, 0xff), 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        p.setBrush(QColor(0x08, 0x5d, 0x8b));
+        p.setPen(QPen(QColor(236, 240, 245), 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(QColor(31, 36, 45));
         QPainterPath body;
         body.moveTo(cx - 9, cy - 5);
         body.lineTo(cx + 3, cy - 5);
@@ -2124,24 +2321,21 @@ void VideoSurface::paintEvent(QPaintEvent *)
         QPolygonF lens;
         lens << QPointF(cx + 6, cy - 3) << QPointF(cx + 11, cy - 6)
              << QPointF(cx + 11, cy + 6) << QPointF(cx + 6, cy + 3);
-        p.setBrush(QColor(0x28, 0xd5, 0xff));
+        p.setBrush(QColor(245, 183, 0));
         p.drawPolygon(lens);
-        p.setPen(QPen(QColor(0x05, 0x2a, 0x45), 1));
-        p.setBrush(QColor(0x04, 0x1c, 0x30));
-        p.drawEllipse(QPointF(cx - 3, cy), 2.2, 2.2);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor(0x28, 0xd5, 0xff));
+        p.setBrush(QColor(245, 183, 0));
         p.drawEllipse(QPointF(badge.right() - 5, badge.top() + 5), 2.1, 2.1);
     }
 
     // значок масштаба — под индикатором камеры, чтобы элементы не перекрывались
     if (m_view.width() < 0.999) {
         const QString z = QStringLiteral("×%1").arg(1.0 / m_view.width(), 0, 'f', 1);
-        const QRect box(width() - 62, 40, 54, 22);
-        p.setPen(Qt::NoPen);
-        p.setBrush(QColor(0x8c, 0xff, 0x00, 220));
+        const QRect box(width() - 62, 38, 54, 22);
+        p.setPen(QPen(QColor(255, 213, 79, 230), 1));
+        p.setBrush(QColor(245, 183, 0, 235));
         p.drawRoundedRect(box, 4, 4);
-        p.setPen(QColor(0x1a, 0x1a, 0x1c));
+        p.setPen(QColor(17, 19, 23));
         p.drawText(box, Qt::AlignCenter, z);
     }
 }
@@ -2222,6 +2416,11 @@ void VideoSurface::mouseReleaseEvent(QMouseEvent *e)
 
 void VideoSurface::mouseDoubleClickEvent(QMouseEvent *e)
 {
+    if (e->button() == Qt::LeftButton && m_view.width() < 0.999) {
+        resetZoom();
+        e->accept();
+        return;
+    }
     emit doubleClicked();
     QWidget::mouseDoubleClickEvent(e);
 }
