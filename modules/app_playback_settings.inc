@@ -754,10 +754,10 @@ public:
         m_chat->setReadOnly(true);
         m_chat->setPlaceholderText(T("Здесь появятся ответы ИИ-помощника."));
         m_chat->setStyleSheet(QStringLiteral(
-            "QTextEdit{color:#ECF0F5;background-color:#12151B;"
+            "QTextEdit{color:#ECF0F5;background-color:#11141A;"
             "background-image:url(:/branding/ai_background.png);background-position:center;"
-            "background-repeat:no-repeat;border:1px solid #C99600;border-radius:6px;"
-            "padding:12px;font-size:10pt;}"));
+            "background-repeat:no-repeat;border:1px solid #2E3645;border-radius:4px;"
+            "padding:10px;font-family:'Segoe UI',sans-serif;font-size:9.5pt;}"));
         m_input = new QLineEdit(this);
         m_input->setPlaceholderText(T("Напишите вопрос о камерах, регистраторах или настройке PSVMS…"));
         auto *send = new QPushButton(T("Отправить"), this);
@@ -1652,7 +1652,7 @@ QWidget *SettingsPage::buildLicenseTab()
         const bool active = psvmsLicenseActive(&status, &expiry);
         if (developerAccess) {
             editionTitle->setText(T("PSVMS — Pro (режим разработчика)"));
-            editionTitle->setStyleSheet(QStringLiteral("font-size:10pt;font-weight:900;color:#F5B700;"));
+            editionTitle->setStyleSheet(QStringLiteral("font-family:'Bahnschrift','Segoe UI',sans-serif;font-size:10.5pt;font-weight:700;color:#F5B700;"));
             editionStatus->setText(T("Полный функционал доступен для учётной записи разработчика. Коммерческая лицензия не изменена."));
         } else {
             editionTitle->setText(active ? T("PSVMS — полная Pro-версия") : T("PSVMS — DEMO ВЕРСИЯ"));
@@ -1739,7 +1739,7 @@ QWidget *SettingsPage::buildLicenseTab()
 QWidget *SettingsPage::buildAboutTab()
 {
     auto *name = new QLabel(App::title(), this);
-    name->setStyleSheet(QStringLiteral("font-size:10pt; font-weight: 700; color: #F5B700;"));
+    name->setStyleSheet(QStringLiteral("font-size:9.5pt; font-weight: 700; color: #F5B700;"));
     auto *ver = new QLabel(T("Версия %1").arg(QString::fromLatin1(App::kVersion)), this);
     ver->setStyleSheet(QStringLiteral("color:#a8a8ac;"));
     auto *author = new QLabel(T("Разработчик: %1").arg(QString::fromUtf8(App::kAuthor)), this);
@@ -1963,7 +1963,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
     // Ненавязчивое «дыхание» фирменного знака: мягкое свечение без изменения
     // размера, положения или геометрии шапки боковой панели.
     auto *brandGlow = new QGraphicsDropShadowEffect(m_brandIcon);
-    brandGlow->setColor(QColor(245, 183, 0, 145));
+    brandGlow->setColor(QColor(245, 183, 0, 130));
     brandGlow->setOffset(0, 0);
     brandGlow->setBlurRadius(5.0);
     m_brandIcon->setGraphicsEffect(brandGlow);
@@ -1984,7 +1984,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
 
     m_brand = new QLabel(QStringLiteral("PSVms"), this);
     m_brand->setObjectName(QStringLiteral("navBrand"));
-    m_brand->setStyleSheet(QStringLiteral("font-size:21px;font-weight:850;letter-spacing:1.2px;color:#F5B700;"));
+    m_brand->setStyleSheet(QStringLiteral("font-family:'Bahnschrift','Segoe UI',sans-serif;font-size:20px;font-weight:700;letter-spacing:1.3px;color:#F5B700;"));
     m_brand->setToolTip(App::title());
     head->setSpacing(5);
     head->addWidget(m_brandIcon, 0, Qt::AlignVCenter);
@@ -2705,18 +2705,18 @@ protected:
         p.setBrush(Qt::NoBrush);
         p.drawEllipse(center, 100.0 + 6.0 * pulse, 100.0 + 6.0 * pulse);
 
-        const QRectF track(350, 444, 500, 5);
+        const QRectF track(350, 444, 500, 4);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor(52, 60, 74, 220));
-        p.drawRoundedRect(track, 2.5, 2.5);
+        p.setBrush(QColor(46, 54, 69, 220));
+        p.drawRoundedRect(track, 2.0, 2.0);
 
         const qreal barW = 150.0;
         const qreal barX = track.left() + m_phase * (track.width() - barW);
         p.setBrush(QColor(245, 183, 0, 240));
-        p.drawRoundedRect(QRectF(barX, track.top(), barW, track.height()), 2.5, 2.5);
+        p.drawRoundedRect(QRectF(barX, track.top(), barW, track.height()), 2.0, 2.0);
 
-        p.setPen(QColor(236, 240, 245, 235));
-        p.setFont(QFont(QStringLiteral("Segoe UI"), 10, QFont::DemiBold));
+        p.setPen(QColor(228, 234, 242, 235));
+        p.setFont(QFont(QStringLiteral("Bahnschrift"), 10, QFont::DemiBold));
         p.drawText(QRect(260, 496, width() - 520, 30), Qt::AlignCenter,
                    T("PSVms  •  ЗАГРУЗКА СИСТЕМЫ И МОДУЛЕЙ ВИДЕОНАБЛЮДЕНИЯ"));
     }

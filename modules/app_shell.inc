@@ -52,63 +52,64 @@ public:
         setAutoFillBackground(true);
         QPalette loginPalette = palette();
         loginPalette.setColor(QPalette::Window, QColor(QStringLiteral("#0D0F12")));
-        loginPalette.setColor(QPalette::Base, QColor(QStringLiteral("#1F242D")));
-        loginPalette.setColor(QPalette::Button, QColor(QStringLiteral("#1F242D")));
+        loginPalette.setColor(QPalette::Base, QColor(QStringLiteral("#1A1F28")));
+        loginPalette.setColor(QPalette::Button, QColor(QStringLiteral("#1D222C")));
         loginPalette.setColor(QPalette::WindowText, QColor(QStringLiteral("#ECF0F5")));
         setPalette(loginPalette);
         setStyleSheet(QStringLiteral(R"LOGIN(
-            QDialog#loginDialog { background:#0D0F12; color:#ECF0F5; }
+            QDialog#loginDialog { background:#0D0F12; color:#ECF0F5; font-family:"Segoe UI", sans-serif; }
             QDialog#loginDialog QWidget { color:#ECF0F5; background:transparent; }
-            QDialog#loginDialog QLabel { color:#D6DCE6; background:transparent; }
+            QDialog#loginDialog QLabel { color:#C8D0DC; background:transparent; }
             QDialog#loginDialog QFrame { background:transparent; }
             QFrame#loginHeader {
-                background:#15181E;
-                border:1px solid #343C4A; border-left:4px solid #F5B700; border-radius:6px;
+                background:#141820;
+                border:1px solid #2A303C; border-left:4px solid #F5B700; border-radius:4px;
             }
-            QFrame#loginHeader QLabel { color:#FFFFFF; }
-            QLabel#loginEyebrow { color:#F5B700; font-size:10pt; font-weight:700; letter-spacing:1px; }
-            QLabel#loginTitle { color:#FFFFFF; font-size:10pt; font-weight:800; }
-            QLabel#loginSubtitle { color:#A7B1C2; font-size:10pt; }
+            QFrame#loginHeader QLabel { color:#ECF0F5; }
+            QLabel#loginEyebrow { color:#F5B700; font-family:"Bahnschrift", "Segoe UI", sans-serif; font-size:9pt; font-weight:700; letter-spacing:1.1px; }
+            QLabel#loginTitle { color:#FFFFFF; font-family:"Segoe UI", sans-serif; font-size:11pt; font-weight:700; }
+            QLabel#loginSubtitle { color:#9AA4B5; font-family:"Segoe UI", sans-serif; font-size:9.5pt; }
             QFrame#loginCard {
-                background:#15181E; border:1px solid #2C333F; border-radius:6px;
+                background:#141820; border:1px solid #2A303C; border-radius:4px;
             }
-            QLabel#loginSectionTitle { color:#ECF0F5; font-size:10pt; font-weight:750; }
-            QLabel#loginSectionHint { color:#9DA8B9; font-size:10pt; }
+            QLabel#loginSectionTitle { color:#ECF0F5; font-size:9.5pt; font-weight:700; letter-spacing:0.2px; }
+            QLabel#loginSectionHint { color:#8D97A8; font-size:9pt; }
             QDialog#loginDialog QComboBox, QDialog#loginDialog QLineEdit#passwordInput {
-                color:#ECF0F5; background:#12151B; border:1px solid #343C4A;
-                border-left:3px solid #F5B700; border-radius:6px; padding:8px 11px; min-height:38px;
+                color:#ECF0F5; background:#101318; border:1px solid #2E3645;
+                border-radius:4px; padding:6px 10px; min-height:34px; font-size:9.5pt;
                 selection-background-color:#F5B700; selection-color:#111317;
             }
             QDialog#loginDialog QComboBox:hover, QDialog#loginDialog QLineEdit#passwordInput:focus {
-                border:1px solid #F5B700; background:#191D24;
+                border:1px solid #F5B700; background:#151922;
             }
             QDialog#loginDialog QComboBox QAbstractItemView {
-                color:#ECF0F5; background:#181C23; selection-color:#111317;
-                selection-background-color:#F5B700; border:1px solid #384152;
+                color:#ECF0F5; background:#171B23; selection-color:#111317;
+                selection-background-color:#F5B700; border:1px solid #323B4B;
                 outline:0; padding:4px;
             }
-            QDialog#loginDialog QFormLayout QLabel { color:#A7B1C2; font-weight:650; }
-            QDialog#loginDialog QCheckBox { color:#D6DCE6; spacing:8px; }
+            QDialog#loginDialog QFormLayout QLabel { color:#9AA4B5; font-weight:600; font-size:9.5pt; }
+            QDialog#loginDialog QCheckBox { color:#C8D0DC; spacing:8px; font-size:9.5pt; }
             QDialog#loginDialog QCheckBox::indicator {
-                width:16px; height:16px; border-radius:4px;
-                background:#12151B; border:1px solid #343C4A;
+                width:16px; height:16px; border-radius:3px;
+                background:#101318; border:1px solid #303847;
             }
             QDialog#loginDialog QCheckBox::indicator:checked {
-                background:#F5B700; border:1px solid #FFD54F;
+                background:#F5B700; border:1px solid #F5B700;
             }
-            QLabel#loginMessage { color:#FFD54F; padding:3px 2px; }
+            QLabel#loginMessage { color:#F5B700; font-size:9pt; font-weight:600; padding:2px 2px; }
             QDialog#loginDialog QDialogButtonBox QPushButton {
-                color:#ECF0F5; background:#1F242D; border:1px solid #343C4A;
-                border-radius:6px; padding:8px 20px; min-width:104px; min-height:36px; font-weight:700;
+                color:#D6DCE6; background:#1C212B; border:1px solid #303847;
+                border-radius:4px; padding:6px 18px; min-width:98px; min-height:32px;
+                font-family:"Segoe UI", sans-serif; font-size:9.5pt; font-weight:600;
             }
             QDialog#loginDialog QPushButton#loginPrimaryButton {
-                color:#111317; background:#F5B700; border:1px solid #FFD54F; font-weight:800;
+                color:#111317; background:#F5B700; border:1px solid #F5B700; font-weight:700;
             }
             QDialog#loginDialog QPushButton#loginPrimaryButton:hover {
-                background:#FFD54F; border-color:#FFFFFF;
+                background:#FFD54F; border-color:#FFD54F;
             }
             QDialog#loginDialog QDialogButtonBox QPushButton:hover {
-                color:#FFFFFF; background:#2A313D; border-color:#F5B700;
+                color:#FFFFFF; background:#262D3A; border-color:#F5B700;
             }
         )LOGIN"));
 
@@ -126,8 +127,8 @@ public:
         brandMark->setAlignment(Qt::AlignCenter);
         brandMark->setFixedSize(48, 48);
         brandMark->setStyleSheet(QStringLiteral(
-            "background:#1F242D; color:#F5B700; border:1px solid #F5B700;"
-            "border-radius:6px; font-size:22pt; font-weight:800;"));
+            "background:#1A1F28; color:#F5B700; border:1px solid #F5B700;"
+            "border-radius:4px; font-family:'Bahnschrift','Segoe UI',sans-serif; font-size:18pt; font-weight:700;"));
         auto *headerText = new QVBoxLayout;
         headerText->setSpacing(3);
         auto *eyebrow = new QLabel(T("СИСТЕМА ВИДЕОНАБЛЮДЕНИЯ"), header);
@@ -493,19 +494,19 @@ QWidget *buildAiHomePanel(QWidget *parent)
     panel->setMinimumWidth(250);
     panel->setMaximumWidth(310);
     panel->setStyleSheet(QStringLiteral(
-        "QFrame#aiHomePanel{background-color:#15181E;background-image:url(:/branding/ai_background.png);"
-        "background-position:center;background-repeat:no-repeat;border:1px solid #343C4A;"
-        "border-radius:6px;} QLabel{color:#ECF0F5;background:rgba(13,15,18,175);} "
-        "QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;"
-        "border-radius:6px;padding:10px;text-align:left;font-weight:700;}"
-        "QPushButton:hover{background:#2A313D;border:1px solid #F5B700;color:#FFD54F;}"
-        "QPushButton:pressed{background:#F5B700;border:1px solid #FFD54F;color:#111317;}"));
+        "QFrame#aiHomePanel{background-color:#141820;background-image:url(:/branding/ai_background.png);"
+        "background-position:center;background-repeat:no-repeat;border:1px solid #2A303C;"
+        "border-radius:4px;} QLabel{color:#ECF0F5;background:rgba(13,15,18,175);} "
+        "QPushButton{background:#1D222C;color:#E4EAF2;border:1px solid #303847;"
+        "border-radius:4px;padding:8px 12px;text-align:left;font-weight:600;}"
+        "QPushButton:hover{background:#262D3A;border:1px solid #F5B700;color:#FFFFFF;}"
+        "QPushButton:pressed{background:#F5B700;border:1px solid #F5B700;color:#111317;font-weight:700;}"));
     auto *layout = new QVBoxLayout(panel);
     layout->setContentsMargins(14, 14, 14, 14);
     layout->setSpacing(10);
 
     auto *heading = new QLabel(T("ИИ-ПОМОЩНИК"), panel);
-    heading->setStyleSheet(QStringLiteral("font-size:10pt;font-weight:800;color:#F5B700;"));
+    heading->setStyleSheet(QStringLiteral("font-family:'Bahnschrift','Segoe UI',sans-serif;font-size:10.5pt;font-weight:700;color:#F5B700;"));
     heading->setAlignment(Qt::AlignCenter);
     layout->addWidget(heading);
 
@@ -519,7 +520,7 @@ QWidget *buildAiHomePanel(QWidget *parent)
         avatarPixmap.fill(QColor("#202328"));
         QPainter avatarPainter(&avatarPixmap);
         avatarPainter.setRenderHint(QPainter::Antialiasing, true);
-        avatarPainter.setPen(QPen(QColor("#F5B700"), 5));
+        avatarPainter.setPen(QPen(QColor("#F5B700"), 4));
         avatarPainter.setBrush(Qt::NoBrush);
         avatarPainter.drawEllipse(QRect(4, 4, 184, 184));
         avatarPainter.setPen(QColor("#F5B700"));
@@ -533,7 +534,7 @@ QWidget *buildAiHomePanel(QWidget *parent)
     auto *intro = new QLabel(T("Привет! Я помогу контролировать камеры, искать события и решать технические проблемы PSVMS."), panel);
     intro->setWordWrap(true);
     intro->setAlignment(Qt::AlignCenter);
-    intro->setStyleSheet(QStringLiteral("font-size:10pt;color:#D6DCE6;padding:6px;background:rgba(13,15,18,195);border-radius:4px;"));
+    intro->setStyleSheet(QStringLiteral("font-size:9.5pt;color:#C8D0DC;padding:6px;background:rgba(13,15,18,195);border-radius:4px;"));
     layout->addWidget(intro);
 
     auto addAction = [panel, layout](const QString &caption, const QString &prompt) {
@@ -553,8 +554,8 @@ QWidget *buildAiHomePanel(QWidget *parent)
     openChat->setObjectName(QStringLiteral("aiOpenChatButton"));
     openChat->setStyleSheet(QStringLiteral(
         "QPushButton#aiOpenChatButton{background:#F5B700;"
-        "color:#111317;border:1px solid #FFD54F;font-size:10pt;font-weight:850;padding:11px;border-radius:6px;}"
-        "QPushButton#aiOpenChatButton:hover{background:#FFD54F;border-color:#FFFFFF;}"));
+        "color:#111317;border:1px solid #F5B700;font-size:9.5pt;font-weight:700;padding:8px 14px;border-radius:4px;text-align:center;}"
+        "QPushButton#aiOpenChatButton:hover{background:#FFD54F;border-color:#FFD54F;}"));
     layout->addWidget(openChat);
     QObject::connect(openChat, &QPushButton::clicked, panel, [panel] {
         openYandexAssistant(panel);
@@ -936,10 +937,10 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
     m_voiceButton->setCursor(Qt::PointingHandCursor);
     m_voiceButton->setMinimumWidth(132);
     m_voiceButton->setStyleSheet(QStringLiteral(
-        "QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:6px;"
-        "padding:5px 12px;font-weight:700;}"
-        "QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"
-        "QPushButton:checked{background:#F5B700;color:#111317;border-color:#FFD54F;}"));
+        "QPushButton{background:#1D222C;color:#E4EAF2;border:1px solid #303847;border-radius:4px;"
+        "padding:5px 12px;font-weight:600;}"
+        "QPushButton:hover{background:#262D3A;border-color:#F5B700;color:#FFFFFF;}"
+        "QPushButton:checked{background:#F5B700;color:#111317;border-color:#F5B700;font-weight:700;}"));
     m_voiceButton->setCheckable(true);
     connect(m_voiceButton, &QPushButton::clicked, this, &MainWindow::toggleVoiceControl);
 
@@ -990,8 +991,8 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
     footerGrid->setColumnStretch(1, 0);
     footerGrid->setColumnStretch(2, 1);
     footer->setStyleSheet(QStringLiteral(
-        "QWidget#mainFooter{background:#12151B;border-top:1px solid #2C333F;}"
-        "QLabel#sysStats,QLabel#clock{color:#A7B1C2;font-size:10pt;font-weight:650;padding:2px 5px;}"));
+        "QWidget#mainFooter{background:#12151B;border-top:1px solid #2A303C;}"
+        "QLabel#sysStats,QLabel#clock{color:#9AA4B5;font-size:9pt;font-weight:600;padding:2px 6px;}"));
     right->addWidget(footer, 0);
     root->addWidget(m_nav);
     root->addLayout(right, 1);

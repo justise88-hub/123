@@ -12,7 +12,7 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
     setProperty("cellHover", false);
     m_frameGlow = new QGraphicsDropShadowEffect(this);
     m_frameGlow->setOffset(0, 0);
-    m_frameGlow->setColor(QColor(245, 183, 0, 120));
+    m_frameGlow->setColor(QColor(245, 183, 0, 110));
     m_frameGlow->setBlurRadius(15);
     setGraphicsEffect(m_frameGlow);
     updateFrameGlow();
@@ -72,11 +72,11 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
     m_volumeSlider->setCursor(Qt::SizeVerCursor);
     m_volumeSlider->setToolTip(T("Громкость камеры"));
     m_volumeSlider->setStyleSheet(QStringLiteral(
-        "QSlider#cellVolume{background:rgba(21,24,30,242);border:1px solid #F5B700;border-radius:6px;padding:5px;}"
-        "QSlider#cellVolume::groove:vertical{background:#12151B;border:1px solid #343C4A;width:7px;border-radius:3px;}"
+        "QSlider#cellVolume{background:rgba(20,24,32,245);border:1px solid #F5B700;border-radius:4px;padding:4px;}"
+        "QSlider#cellVolume::groove:vertical{background:#101318;border:1px solid #2E3645;width:6px;border-radius:3px;}"
         "QSlider#cellVolume::sub-page:vertical{background:#F5B700;border-radius:3px;}"
-        "QSlider#cellVolume::add-page:vertical{background:#1F242D;border-radius:3px;}"
-        "QSlider#cellVolume::handle:vertical{background:#FFD54F;border:2px solid #FFFFFF;width:15px;height:15px;margin:-4px -5px;border-radius:8px;}"));
+        "QSlider#cellVolume::add-page:vertical{background:#1A1F28;border-radius:3px;}"
+        "QSlider#cellVolume::handle:vertical{background:#F5B700;border:1px solid #FFFFFF;width:14px;height:14px;margin:-4px -4px;border-radius:7px;}"));
     m_volumeSlider->setVisible(false);
     m_closeBtn = new QToolButton(m_bar);
     m_closeBtn->setObjectName(QStringLiteral("cellBtn"));
