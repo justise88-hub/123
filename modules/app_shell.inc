@@ -1136,16 +1136,6 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
         });
     }
 
-    // Быстрая навигация по модулям PSVms через Ctrl+1..Ctrl+5
-    for (int p = 0; p < 5; ++p) {
-        auto *modKey = new QShortcut(QKeySequence(QStringLiteral("Ctrl+%1").arg(p + 1)), this);
-        modKey->setContext(Qt::WindowShortcut);
-        connect(modKey, &QShortcut::activated, this, [this, p] {
-            if (m_nav && p < m_nav->itemCount())
-                m_nav->setCurrent(p, true);
-        });
-    }
-
     // Единая мягкая анимация наведения и нажатия для кнопок всех основных разделов.
     auto *buttonMotion = new ButtonMotionFilter(this);
     for (QPushButton *button : findChildren<QPushButton *>())
