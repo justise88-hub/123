@@ -1,0 +1,36 @@
+<RCC>
+  <qresource prefix="/branding">
+    <file alias="psvms.png">PSVMS_icon.png</file>
+    <file alias="app.ico">PSVMS.ico</file>
+    <file alias="taskbar.png">assets/psvms_taskbar.png</file>
+    <file alias="ai_background.png">assets/psvms_ai_background.png</file>
+    <file alias="wallpaper.jpg">assets/psvms_wallpaper.jpg</file>
+    <file alias="sidebar.jpg">assets/psvms_sidebar.jpg</file>
+    <file alias="splash.png">assets/psvms_splash.png</file>
+    <file alias="avatar.png">assets/psvms_avatar.png</file>
+    <file alias="citywallpaper.png">citywallpaper.png</file>
+    <file alias="icons/about.png">assets/icons/about.png</file>
+    <file alias="icons/add.png">assets/icons/add.png</file>
+    <file alias="icons/admin.png">assets/icons/admin.png</file>
+    <file alias="icons/archive.png">assets/icons/archive.png</file>
+    <file alias="icons/camera.png">assets/icons/camera.png</file>
+    <file alias="icons/empty_cell.png">assets/icons/empty_cell.png</file>
+    <file alias="icons/events.png">assets/icons/events.png</file>
+    <file alias="icons/exit.png">assets/icons/exit.png</file>
+    <file alias="icons/fullscreen.png">assets/icons/fullscreen.png</file>
+    <file alias="icons/group.png">assets/icons/group.png</file>
+    <file alias="icons/home.png">assets/icons/home.png</file>
+    <file alias="icons/language.png">assets/icons/language.png</file>
+    <file alias="icons/live.png">assets/icons/live.png</file>
+    <file alias="icons/motion.png">assets/icons/motion.png</file>
+    <file alias="icons/network.png">assets/icons/network.png</file>
+    <file alias="icons/playback.png">assets/icons/playback.png</file>
+    <file alias="icons/qr.png">assets/icons/qr.png</file>
+    <file alias="icons/recorder.png">assets/icons/recorder.png</file>
+    <file alias="icons/security.png">assets/icons/security.png</file>
+    <file alias="icons/settings.png">assets/icons/settings.png</file>
+    <file alias="icons/snapshot.png">assets/icons/snapshot.png</file>
+    <file alias="icons/users.png">assets/icons/users.png</file>
+    <file alias="icons/volume.png">assets/icons/volume.png</file>
+  </qresource>
+</RCC>
