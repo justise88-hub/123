@@ -1,4 +1,4 @@
-// PSVMS module: Страницы устройств, событий, поиска и просмотра
+// PSVms module: Страницы устройств, событий, поиска и просмотра
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -150,7 +150,7 @@ DevicesPage::DevicesPage(CameraManager *mgr, QWidget *parent) : QWidget(parent),
     auto *removeGroupBtn = new QPushButton(T("Удалить группу…"), this);
     m_remove = new QPushButton(T("Удалить камеру"), this);
     m_removeAll = new QPushButton(T("Удалить все камеры"), this);
-    m_removeAll->setToolTip(T("Удалить все камеры и каналы регистраторов из списка PSVMS"));
+    m_removeAll->setToolTip(T("Удалить все камеры и каналы регистраторов из списка PSVms"));
     auto *start = new QPushButton(T("Запустить запись"), this);
     auto *stop = new QPushButton(T("Остановить запись"), this);
     auto *deviceFilter = new QLineEdit(this);
@@ -356,7 +356,7 @@ DevicesPage::DevicesPage(CameraManager *mgr, QWidget *parent) : QWidget(parent),
         if (ids.isEmpty())
             return;
         QMessageBox box(QMessageBox::Warning, T("Удалить все камеры"),
-            T("Удалить ВСЕ камеры и каналы регистраторов (%1) из PSVMS?\nВсе потоки и запись будут остановлены. Уже сохранённые файлы архива останутся на диске. Это действие нельзя отменить.").arg(ids.size()),
+            T("Удалить ВСЕ камеры и каналы регистраторов (%1) из PSVms?\nВсе потоки и запись будут остановлены. Уже сохранённые файлы архива останутся на диске. Это действие нельзя отменить.").arg(ids.size()),
             QMessageBox::NoButton, this);
         QPushButton *removeButton = box.addButton(T("Удалить все"), QMessageBox::DestructiveRole);
         box.addButton(T("Отмена"), QMessageBox::RejectRole);
@@ -823,7 +823,7 @@ FullscreenView::FullscreenView(VideoCell *cell, QWidget *parent)
     : QWidget(parent, Qt::Window), m_cell(cell)
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    setWindowTitle(cell ? cell->windowTitle() : QStringLiteral("PSVMS"));
+    setWindowTitle(cell ? cell->windowTitle() : QStringLiteral("PSVms"));
     setStyleSheet(QStringLiteral("background: #000000;"));
 
     auto *lay = new QVBoxLayout(this);
@@ -966,14 +966,38 @@ HikIpDialog::HikIpDialog(CameraManager *mgr, QWidget *parent) : QDialog(parent),
     m_user = new QLineEdit(QStringLiteral("admin"), this);
     m_pass = new QLineEdit(this);
     m_pass->setEchoMode(QLineEdit::Password);
+    auto *wholeRecorderCheck = new QCheckBox(T("Добавить как целый регистратор (все каналы в одну группу)"), this);
+    wholeRecorderCheck->setChecked(true);
+    wholeRecorderCheck->setToolTip(T("Добавляет сразу все каналы регистратора и объединяет их в единую группу устройства"));
+
     m_channels = new QSpinBox(this);
     m_channels->setRange(0, 128);
     m_channels->setSpecialValueText(T("авто"));
-    m_channels->setToolTip(T("Число каналов регистратора, если автоопределение не сработало"));
+    m_channels->setValue(16);
+    m_channels->setToolTip(T("0 — автоопределение каналов, либо укажите число каналов регистратора (4, 8, 16, 32, 64 и т.д.)"));
+
+    auto *presetRow = new QHBoxLayout;
+    presetRow->setSpacing(6);
+    presetRow->addWidget(m_channels);
+    const int kChannelPresets[6] = {0, 4, 8, 16, 32, 64};
+    for (int p : kChannelPresets) {
+        const QString btnText = (p == 0) ? T("Авто") : QString::number(p);
+        auto *pBtn = new QPushButton(btnText, this);
+        pBtn->setMinimumWidth(42);
+        pBtn->setToolTip(p == 0 ? T("Автоопределить число каналов") : T("Установить %1 каналов регистратора").arg(p));
+        connect(pBtn, &QPushButton::clicked, this, [this, p, wholeRecorderCheck] {
+            m_channels->setValue(p);
+            if (p > 1)
+                wholeRecorderCheck->setChecked(true);
+        });
+        presetRow->addWidget(pBtn);
+    }
+    presetRow->addStretch(1);
+
     m_group = new QLineEdit(this);
-    m_group->setPlaceholderText(T("для регистратора — по умолчанию его имя"));
+    m_group->setPlaceholderText(T("для регистратора — по умолчанию имя регистратора и IP"));
     m_name = new QLineEdit(this);
-    m_name->setPlaceholderText(T("необязательно"));
+    m_name->setPlaceholderText(T("имя регистратора или камеры (необязательно)"));
 
     auto *portRow = new QHBoxLayout;
     portRow->addWidget(new QLabel(T("HTTP-порт"), this));
@@ -988,7 +1012,8 @@ HikIpDialog::HikIpDialog(CameraManager *mgr, QWidget *parent) : QDialog(parent),
     form->addRow(T("Порты"), portRow);
     form->addRow(T("Логин"), m_user);
     form->addRow(T("Пароль"), m_pass);
-    form->addRow(T("Каналов в регистраторе"), m_channels);
+    form->addRow(QString(), wholeRecorderCheck);
+    form->addRow(T("Каналов в регистраторе"), presetRow);
     form->addRow(T("Название"), m_name);
     form->addRow(T("Группа"), m_group);
 
@@ -1071,19 +1096,25 @@ void HikIpDialog::onResolved(const AddResult &res)
         return;
     }
 
-    const QString base = !res.name.isEmpty() ? res.name : (!res.model.isEmpty() ? res.model : m_address);
+    auto *chkWhole = findChild<QCheckBox *>();
+    const bool treatAsWholeRecorder = res.recorder
+        || (chkWhole && chkWhole->isChecked() && (res.channels.size() > 1 || m_channels->value() > 1));
+    const QString customTitle = m_name->text().trimmed();
+    const QString base = !customTitle.isEmpty()
+        ? customTitle
+        : (!res.name.isEmpty() ? res.name : (!res.model.isEmpty() ? res.model : m_address));
     QString group = m_group->text().trimmed();
-    if (group.isEmpty() && res.recorder)
+    if (group.isEmpty() && treatAsWholeRecorder)
         group = QStringLiteral("%1 (%2)").arg(base, m_address);
 
     QList<CameraEntry> entries;
     for (const AddedChannel &c : res.channels) {
         const QString chName = c.name.isEmpty() ? T("Канал %1").arg(c.number) : c.name;
         CameraEntry e;
-        if (res.recorder)
-            e.name = QStringLiteral("%1 — %2").arg(m_address, chName);
+        if (treatAsWholeRecorder)
+            e.name = QStringLiteral("%1 — %2").arg(base, chName);
         else
-            e.name = !m_name->text().trimmed().isEmpty() ? m_name->text().trimmed()
+            e.name = !customTitle.isEmpty() ? customTitle
                      : (base == m_address ? m_address : QStringLiteral("%1 (%2)").arg(base, m_address));
         e.group = group;
         e.url = c.mainUrl;
@@ -1092,8 +1123,11 @@ void HikIpDialog::onResolved(const AddResult &res)
         entries.append(e);
     }
     m_mgr->addMany(entries);
-    m_status->setText(T("Добавлено каналов: %1 (%2). Способ определения: %3")
-                          .arg(entries.size()).arg(res.model.isEmpty() ? base : res.model).arg(res.method));
+    m_status->setText(treatAsWholeRecorder
+        ? T("Добавлен целый регистратор «%1»: каналов %2 (%3). Способ: %4")
+            .arg(base).arg(entries.size()).arg(res.model.isEmpty() ? base : res.model).arg(res.method)
+        : T("Добавлено каналов: %1 (%2). Способ определения: %3")
+            .arg(entries.size()).arg(res.model.isEmpty() ? base : res.model).arg(res.method));
 }
 
 // ======================================================================
@@ -1866,7 +1900,8 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     lv->setSpacing(0);
 
     m_search = new QLineEdit(left);
-    m_search->setPlaceholderText(T("Поиск камеры…"));
+    m_search->setPlaceholderText(T("Поиск по названию, IP или URL…"));
+    m_search->setClearButtonEnabled(true);
     m_search->setClearButtonEnabled(true);
 
     m_tree = new CameraTree(left);
@@ -1969,8 +2004,11 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
         emit message(T("Отчёт диагностики сохранён: %1").arg(path));
     });
     lv->addWidget(m_tree, 1);
-    left->setMinimumWidth(190);
-    left->setMaximumWidth(260);
+    const int leftPct = qBound(70, QSettings().value(QStringLiteral("ui/leftPanelWidthPercent"), 100).toInt(), 140);
+    const int minLeftW = qMax(140, qRound(190 * leftPct / 100.0));
+    const int maxLeftW = qMax(minLeftW + 30, qRound(260 * leftPct / 100.0));
+    left->setMinimumWidth(minLeftW);
+    left->setMaximumWidth(maxLeftW);
 
     // ---- центр: мозаика и нижняя панель ----
     auto *center = new QWidget;
@@ -1979,7 +2017,9 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     cv->setSpacing(0);
 
     m_grid = new VideoGrid(mgr, center);
-    m_grid->setContentsMargins(4, 4, 4, 4);
+    const int gapPct = qBound(25, QSettings().value(QStringLiteral("ui/gridGapPercent"), 100).toInt(), 200);
+    const int gridMargin = qMax(1, qRound(4 * gapPct / 100.0));
+    m_grid->setContentsMargins(gridMargin, gridMargin, gridMargin, gridMargin);
 
     auto *toolbar = new QWidget(center);
     toolbar->setObjectName(QStringLiteral("videoToolbar"));
@@ -2017,6 +2057,20 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     connect(m_grid, &VideoGrid::layoutCountChanged, this, updateLayoutBtn);
     updateLayoutBtn(m_grid->layoutCount());
     tools->addWidget(m_layoutBtn);
+
+    auto *streamBtn = new QToolButton(center);
+    streamBtn->setPopupMode(QToolButton::InstantPopup);
+    streamBtn->setText(T("⇄ Поток сетки"));
+    streamBtn->setToolTip(T("Качество потока сетки (Ctrl+S — подпоток для всех активных камер)"));
+    auto *streamMenu = new QMenu(streamBtn);
+    connect(streamMenu->addAction(T("Авто (подпоток в сетке, основной на весь экран)")),
+            &QAction::triggered, this, [this] { m_grid->setGridStreamQuality(0); });
+    connect(streamMenu->addAction(T("Основной поток для всех ячеек")),
+            &QAction::triggered, this, [this] { m_grid->setGridStreamQuality(1); });
+    connect(streamMenu->addAction(T("Подпоток для всех ячеек (снижает нагрузку на 1920×1080)")),
+            &QAction::triggered, this, [this] { m_grid->setGridStreamQuality(2); });
+    streamBtn->setMenu(streamMenu);
+    tools->addWidget(streamBtn);
 
     // Именованные шаблоны убраны: текущая раскладка камер сохраняется автоматически
     // после каждого переноса и восстанавливается при следующем запуске.
@@ -2070,7 +2124,7 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     cv->addWidget(m_grid, 1);
     cv->addWidget(toolbar);
 
-    // Правая панель управления PTZ — как на фирменном макете PSVMS
+    // Правая панель управления PTZ — как на фирменном макете PSVms
     auto *rightPanel = new QWidget;
     rightPanel->setObjectName(QStringLiteral("controlRail"));
     auto *rightLayout = new QVBoxLayout(rightPanel);
@@ -2231,6 +2285,37 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
             });
 
             menu.addSeparator();
+            QAction *openArchiveAct = menu.addAction(T("Открыть архив камеры"));
+            connect(openArchiveAct, &QAction::triggered, this, [this, cameraId] {
+                openArchive(cameraId);
+            });
+            QAction *toggleQualityAct = menu.addAction(T("Переключить поток (основной / подпоток)"));
+            connect(toggleQualityAct, &QAction::triggered, this, [this, cameraId] {
+                if (const CameraEntry *cur = m_mgr->find(cameraId)) {
+                    CameraEntry upd = *cur;
+                    upd.viewQuality = (upd.viewQuality == 2) ? 1 : 2;
+                    m_mgr->update(upd);
+                    m_grid->refreshCells();
+                    emit message(upd.viewQuality == 2
+                        ? T("Включён подпоток для «%1»").arg(upd.name)
+                        : T("Включён основной поток для «%1»").arg(upd.name));
+                }
+            });
+            QAction *editCamAct = menu.addAction(T("Настройки камеры…"));
+            connect(editCamAct, &QAction::triggered, this, [this] {
+                if (!Users::current().isAdmin()) {
+                    emit message(T("Настройки камеры доступны администратору"));
+                    return;
+                }
+                if (QWidget *win = window()) {
+                    if (auto *mw = qobject_cast<QMainWindow *>(win)) {
+                        if (auto *nav = mw->findChild<SideNav *>())
+                            nav->setCurrent(1, true);
+                    }
+                }
+                emit message(T("Открыт раздел «Камеры»"));
+            });
+            menu.addSeparator();
             QAction *deleteCamera = menu.addAction(T("Удалить эту камеру / канал регистратора…"));
             deleteCamera->setEnabled(Users::current().isAdmin());
             connect(deleteCamera, &QAction::triggered, this, [this, cameraId] {
@@ -2239,7 +2324,7 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
                     return;
                 const QString deviceName = current->name;
                 QMessageBox box(QMessageBox::Warning, T("Удаление устройства"),
-                    T("Удалить «%1» из PSVMS?\nЗапись будет остановлена, устройство исчезнет из списка. Уже сохранённые файлы архива останутся на диске.").arg(deviceName),
+                    T("Удалить «%1» из PSVms?\nЗапись будет остановлена, устройство исчезнет из списка. Уже сохранённые файлы архива останутся на диске.").arg(deviceName),
                     QMessageBox::NoButton, this);
                 QPushButton *removeButton = box.addButton(T("Удалить"), QMessageBox::DestructiveRole);
                 box.addButton(T("Отмена"), QMessageBox::RejectRole);
@@ -2339,6 +2424,7 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
 
     rebuildTree();
     m_grid->restoreLayout();     // камеры возвращаются на свои места (без запуска, если отключён автозапуск)
+    applyLayoutMetricsNow();
     installCameraButtonAutoFit(this);
 }
 
@@ -2457,11 +2543,12 @@ void LiveViewPage::rebuildTree()
         QTreeWidgetItem *parent = groups.value(g, nullptr);
         if (!parent) {
             parent = new QTreeWidgetItem(m_tree, QStringList(g));
-            parent->setFlags(Qt::ItemIsEnabled);
+            parent->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
             groups.insert(g, parent);
         }
         auto *it = new QTreeWidgetItem(parent, QStringList(e.name));
         it->setData(0, Qt::UserRole, e.id);
+        it->setData(0, Qt::UserRole + 1, e.ip + QLatin1Char(' ') + maskCredentialsInUrl(e.url));
         it->setIcon(0, liveDotIcon(liveStateColor(m_mgr, e.id)));
         it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
         m_items.insert(e.id, it);
@@ -2481,10 +2568,16 @@ void LiveViewPage::applyFilter(const QString &text)
     const QString t = text.trimmed();
     for (int g = 0; g < m_tree->topLevelItemCount(); ++g) {
         QTreeWidgetItem *grp = m_tree->topLevelItem(g);
+        const bool groupMatch = !t.isEmpty()
+            && grp->text(0).contains(t, Qt::CaseInsensitive);
         int visible = 0;
         for (int i = 0; i < grp->childCount(); ++i) {
             QTreeWidgetItem *c = grp->child(i);
-            const bool show = t.isEmpty() || c->text(0).contains(t, Qt::CaseInsensitive);
+            const QString meta = c->data(0, Qt::UserRole + 1).toString();
+            const bool show = t.isEmpty()
+                || groupMatch
+                || c->text(0).contains(t, Qt::CaseInsensitive)
+                || meta.contains(t, Qt::CaseInsensitive);
             c->setHidden(!show);
             if (show)
                 ++visible;
@@ -2515,17 +2608,42 @@ void LiveViewPage::setPanelVisible(bool on)
     anim->setDuration(240);
     anim->setEasingCurve(QEasingCurve::InOutCubic);
     anim->setStartValue(m_leftPanel->width());
-    anim->setEndValue(on ? 300 : 0);
+    const int targetW = m_leftPanel->maximumWidth() > 0 ? m_leftPanel->maximumWidth() : 260;
+    anim->setEndValue(on ? targetW : 0);
     connect(anim, &QPropertyAnimation::finished, this, [this, on] {
         if (on) {
-            m_leftPanel->setMinimumWidth(230);
-            m_leftPanel->setMaximumWidth(380);
+            applyLayoutMetricsNow();
         } else {
             m_leftPanel->hide();
         }
     });
     m_panelAnim = anim;
     anim->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void LiveViewPage::applyLayoutMetricsNow()
+{
+    QSettings s;
+    const int leftPct = qBound(70, s.value(QStringLiteral("ui/leftPanelWidthPercent"), 100).toInt(), 140);
+    int screenBonus = 0;
+    if (QScreen *scr = screen() ? screen() : QGuiApplication::primaryScreen()) {
+        if (scr->geometry().width() >= 3440)
+            screenBonus = 20;
+    }
+    const int minLeftW = qMax(140, qRound((190 + screenBonus) * leftPct / 100.0));
+    const int maxLeftW = qMax(minLeftW + 30, qRound((260 + screenBonus) * leftPct / 100.0));
+    if (m_leftPanel) {
+        m_leftPanel->setMinimumWidth(minLeftW);
+        m_leftPanel->setMaximumWidth(maxLeftW);
+    }
+
+    const int gapPct = qBound(25, s.value(QStringLiteral("ui/gridGapPercent"), 100).toInt(), 200);
+    const int gridMargin = qMax(1, qRound(4 * gapPct / 100.0));
+    if (m_grid) {
+        m_grid->setContentsMargins(gridMargin, gridMargin, gridMargin, gridMargin);
+        if (auto *gl = qobject_cast<QGridLayout *>(m_grid->layout()))
+            gl->setSpacing(qMax(1, qRound(3 * gapPct / 100.0)));
+    }
 }
 
 // ======================================================================

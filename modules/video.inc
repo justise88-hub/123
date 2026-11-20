@@ -1,4 +1,4 @@
-// PSVMS module: Видеоячейки, сетка и видеоповерхность
+// PSVms module: Видеоячейки, сетка и видеоповерхность
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -179,6 +179,8 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
         if (!m_started || isLocalCapture() || !frame.isValid() || m_firstFrameReceived)
             return;
         m_firstFrameReceived = true;
+        if (m_connectStartedMs > 0)
+            m_firstFrameMs = qMax<qint64>(1, QDateTime::currentMSecsSinceEpoch() - m_connectStartedMs);
         if (m_connectTimeout) m_connectTimeout->stop();
         const qint64 elapsed = m_connectStartedMs > 0
             ? QDateTime::currentMSecsSinceEpoch() - m_connectStartedMs : -1;
@@ -339,6 +341,9 @@ void VideoCell::startPlayback()
     m_retryDelayMs = 3000;
     m_retryAttempt = 0;
     m_firstFrameReceived = false;
+    m_firstFrameMs = -1;
+    m_autoPaused = false;
+    m_lastStopReason.clear();
     m_connectStartedMs = 0;
     m_started = true;
     writePsvmsLog(QStringLiteral("Видеопоток: запуск камеры id=%1 host=%2")
@@ -361,6 +366,8 @@ void VideoCell::startPlayback()
 void VideoCell::stopPlayback()
 {
     m_started = false;
+    if (m_lastStopReason.isEmpty())
+        m_lastStopReason = T("Остановлено пользователем");
     if (m_liveBadge) {
         m_liveBadge->setText(QStringLiteral("Ⅱ ПАУЗА"));
         m_liveBadge->setProperty("paused", true);
@@ -495,7 +502,8 @@ void VideoCell::scheduleReconnect()
     const int delayMs = m_retryDelayMs;
     const int sec = qMax(1, (delayMs + 500) / 1000);
     if (m_surface) {
-        m_surface->setStatusText(T("Повтор #%1 через %2 с…").arg(m_retryAttempt).arg(sec));
+        m_lastStopReason = T("Переподключение (попытка #%1, пауза %2 с)").arg(m_retryAttempt).arg(sec);
+    m_surface->setStatusText(T("Повтор #%1 через %2 с…").arg(m_retryAttempt).arg(sec));
         m_surface->setLinkQuality(VideoSurface::LinkQuality::Connecting);
     }
     writePsvmsLog(QStringLiteral("Видеопоток: переподключение камеры id=%1 попытка=#%2 через %3 мс")
@@ -1093,6 +1101,61 @@ QList<GridLayoutDef> VideoGrid::layouts()
     return {{1, 1}, {4, 2}, {6, 3}, {8, 4}, {9, 3}, {12, 4}, {16, 4}, {20, 5}, {25, 5}, {36, 6}, {49, 7}, {64, 8}};
 }
 
+namespace {
+
+struct PsvmsLayoutPreset {
+    QString name;
+    int count = 4;
+    QStringList cells;
+    int quality = 0;
+    bool patrol = false;
+    int patrolSec = 10;
+    QString hotkey;
+};
+
+[[maybe_unused]] QList<PsvmsLayoutPreset> readPsvmsLayoutPresets()
+{
+    QList<PsvmsLayoutPreset> out;
+    QSettings s;
+    const int n = s.beginReadArray(QStringLiteral("presets/items"));
+    for (int i = 0; i < n; ++i) {
+        s.setArrayIndex(i);
+        PsvmsLayoutPreset p;
+        p.name = s.value(QStringLiteral("name")).toString().trimmed();
+        p.count = s.value(QStringLiteral("count"), 4).toInt();
+        p.cells = s.value(QStringLiteral("cells")).toStringList();
+        p.quality = s.value(QStringLiteral("quality"), 0).toInt();
+        p.patrol = s.value(QStringLiteral("patrol"), false).toBool();
+        p.patrolSec = qMax(3, s.value(QStringLiteral("patrolSec"), 10).toInt());
+        p.hotkey = s.value(QStringLiteral("hotkey")).toString().trimmed();
+        if (!p.name.isEmpty())
+            out.append(p);
+    }
+    s.endArray();
+    return out;
+}
+
+[[maybe_unused]] void writePsvmsLayoutPresets(const QList<PsvmsLayoutPreset> &presets)
+{
+    QSettings s;
+    s.beginWriteArray(QStringLiteral("presets/items"), presets.size());
+    for (int i = 0; i < presets.size(); ++i) {
+        s.setArrayIndex(i);
+        const PsvmsLayoutPreset &p = presets.at(i);
+        s.setValue(QStringLiteral("name"), p.name);
+        s.setValue(QStringLiteral("count"), p.count);
+        s.setValue(QStringLiteral("cells"), p.cells);
+        s.setValue(QStringLiteral("quality"), p.quality);
+        s.setValue(QStringLiteral("patrol"), p.patrol);
+        s.setValue(QStringLiteral("patrolSec"), p.patrolSec);
+        s.setValue(QStringLiteral("hotkey"), p.hotkey);
+    }
+    s.endArray();
+    s.sync();
+}
+
+} // namespace
+
 QString VideoGrid::layoutLabel(int count)
 {
     const int cols = gridColumnsFor(count);
@@ -1172,9 +1235,33 @@ void VideoGrid::ensureCells(int n)
         });
         connect(cell, &VideoCell::groupDropped, this, [this](VideoCell *target, const QStringList &ids) {
             int start = m_cells.indexOf(target);
-            if (start < 0) return;
+            if (start < 0) start = 0;
             QSet<QString> already;
             for (const QString &id : cameraIds()) if (!id.isEmpty()) already.insert(id);
+            int neededNew = 0;
+            for (const QString &id : ids) {
+                if (!id.isEmpty() && !already.contains(id))
+                    ++neededNew;
+            }
+            int freeSlots = 0;
+            for (int i = start; i < m_count && i < m_cells.size(); ++i) {
+                if (m_cells.at(i)->isEmpty())
+                    ++freeSlots;
+            }
+            if (freeSlots < neededNew) {
+                const int requiredTotal = start + neededNew;
+                int chosenLayout = 0;
+                for (const GridLayoutDef &d : layouts()) {
+                    if (d.count >= requiredTotal) {
+                        chosenLayout = d.count;
+                        break;
+                    }
+                }
+                if (chosenLayout > 0 && chosenLayout > m_count) {
+                    setLayoutCount(chosenLayout);
+                    start = qBound(0, start, m_count - 1);
+                }
+            }
             int placed = 0, duplicates = 0;
             for (const QString &id : ids) {
                 if (already.contains(id)) { ++duplicates; continue; }
@@ -1187,7 +1274,11 @@ void VideoGrid::ensureCells(int n)
                 ++placed;
             }
             if (duplicates) emit message(T("Часть камер уже размещена в ячейках и была пропущена: %1.").arg(duplicates));
-            if (placed) { select(m_cells.at(qMin(start + placed - 1, m_count - 1))); saveLayoutNow(); }
+            if (placed) {
+                select(m_cells.at(qMin(start + placed - 1, m_count - 1)));
+                saveLayoutNow();
+                emit message(T("Размещено каналов регистратора/группы в сетке (%1): %2").arg(layoutLabel(m_count)).arg(placed));
+            }
         });
         connect(cell, &VideoCell::cellDropped, this, [this](VideoCell *c, quintptr src) {
             for (VideoCell *o : std::as_const(m_cells)) {
@@ -1326,13 +1417,13 @@ QStringList VideoGrid::cameraIds() const
     return ids;
 }
 
-// Основной поток или подпоток — по настройке качества камеры; «авто»: подпоток в мозаике, основной в 1 × 1
+// Основной поток или подпоток — по настройке качества камеры; «авто»: основной в 1 × 1, экономный режим на плотных раскладках
 QUrl VideoGrid::urlFor(const CameraEntry &e, const VideoCell *) const
 {
     bool wantMain;
     if (m_count == 1)
         wantMain = (e.viewQuality != 2);
-    else if (e.viewQuality == 1)
+    else if (e.viewQuality == 1 && m_count <= 6)
         wantMain = true;
     else if (e.viewQuality == 2)
         wantMain = false;
@@ -1489,13 +1580,19 @@ void VideoGrid::applyTemplateData(int count, const QStringList &ids, bool autopl
     }
     m_restoring = false;
     // Восстановление раскладки не должно создавать десятки RTSP-сессий
-    // одновременно: запускаем их с небольшим интервалом.
+    // одновременно: запускаем их с небольшим интервалом и учётом лимита потоков.
     for (int i = 0; i < pendingStarts.size(); ++i) {
         const auto pending = pendingStarts.at(i);
-        QTimer::singleShot(i * 400, this, [pending] {
-            if (pending.first && !pending.first->isEmpty()
-                && pending.first->cameraId() == pending.second)
-                pending.first->startPlayback();
+        QTimer::singleShot(i * 650, this, [this, pending] {
+            if (!pending.first || pending.first->isEmpty()
+                || pending.first->cameraId() != pending.second)
+                return;
+            const int limit = maxActiveStreamsLimit();
+            if (limit > 0 && activePlaybackCount() >= limit) {
+                pending.first->setProperty("psvmsLastStopReason", T("Ожидание слота потока (лимит %1)").arg(limit));
+                return;
+            }
+            pending.first->startPlayback();
         });
     }
     saveSoon();
@@ -1540,11 +1637,82 @@ void VideoGrid::saveTemplate(const QString &name)
 
 void VideoGrid::applyTemplateNamed(const QString &name)
 {
+    for (const PsvmsLayoutPreset &p : readPsvmsLayoutPresets()) {
+        if (p.name == name) {
+            applyPresetNamed(name);
+            return;
+        }
+    }
     for (const GridTemplate &t : readGridTemplates()) {
         if (t.name == name) {
             applyTemplateData(t.count, t.cells, true);
             emit message(T("Применён шаблон «%1»").arg(name));
             return;
+        }
+    }
+}
+
+void VideoGrid::applyPresetNamed(const QString &name)
+{
+    for (const PsvmsLayoutPreset &p : readPsvmsLayoutPresets()) {
+        if (p.name == name) {
+            applyTemplateData(p.count, p.cells, true);
+            setGridStreamQuality(p.quality);
+            setPatrolIntervalSec(p.patrolSec);
+            setPatrolEnabled(p.patrol);
+            emit message(T("Применён пресет «%1» (%2)").arg(p.name, layoutLabel(p.count)));
+            return;
+        }
+    }
+    applyTemplateNamed(name);
+}
+
+int VideoGrid::activePlaybackCount() const
+{
+    int active = 0;
+    for (const VideoCell *c : m_cells) {
+        if (c && !c->isEmpty() && c->isStarted())
+            ++active;
+    }
+    return active;
+}
+
+int VideoGrid::maxActiveStreamsLimit() const
+{
+    QSettings s;
+    return qBound(0, s.value(QStringLiteral("video/maxActiveStreams"), 0).toInt(), 64);
+}
+
+void VideoGrid::setAutoPaused(bool paused)
+{
+    QSettings s;
+    if (!s.value(QStringLiteral("video/autoPauseHidden"), true).toBool())
+        return;
+    if (paused) {
+        for (VideoCell *c : m_cells) {
+            if (c && !c->isEmpty() && c->isStarted()) {
+                c->setProperty("psvmsAutoPaused", true);
+                c->stopPlayback();
+            }
+        }
+    } else {
+        int delayIdx = 0;
+        for (VideoCell *c : m_cells) {
+            if (!c || c->isEmpty())
+                continue;
+            if (c->property("psvmsAutoPaused").toBool()) {
+                c->setProperty("psvmsAutoPaused", false);
+                QPointer<VideoCell> pc(c);
+                QTimer::singleShot(delayIdx * 350, this, [this, pc] {
+                    if (!pc || pc->isEmpty())
+                        return;
+                    const int limit = maxActiveStreamsLimit();
+                    if (limit > 0 && activePlaybackCount() >= limit)
+                        return;
+                    pc->startPlayback();
+                });
+                ++delayIdx;
+            }
         }
     }
 }
@@ -1616,7 +1784,15 @@ void VideoGrid::showCellMenu(VideoCell *cell, const QPoint &globalPos)
     QPointer<VideoCell> pc(cell);
 
     QMenu menu(this);
-    menu.addAction(entry.name)->setEnabled(false);
+    const bool isMainStream = (cell->url() == QUrl(entry.url)) || entry.liveUrl.isEmpty();
+    QSettings vpnSt;
+    const bool vpnOk = vpnSt.value(QStringLiteral("vpn/reachable"), true).toBool();
+    const int vpnRtt = vpnSt.value(QStringLiteral("vpn/lastRttMs"), 0).toInt();
+    const QString streamTag = isMainStream ? T("Main") : T("Sub");
+    const QString netTag = vpnRtt > 0
+        ? (vpnOk ? T("VPN %1 мс").arg(vpnRtt) : T("VPN недоступен (%1 мс)").arg(vpnRtt))
+        : (vpnOk ? T("Сеть OK") : T("VPN недоступен"));
+    menu.addAction(QStringLiteral("%1  [%2 | %3]").arg(entry.name, streamTag, netTag))->setEnabled(false);
     menu.addSeparator();
 
     addGridAction(&menu, T("Настройки камеры…"), this, [this, id] { editCamera(id); });
@@ -1769,6 +1945,21 @@ void VideoGrid::showCellMenu(VideoCell *cell, const QPoint &globalPos)
     }
 
     menu.addSeparator();
+    addGridAction(&menu, T("Перезапустить поток"), this, [pc] {
+        if (pc) {
+            pc->restart();
+        }
+    });
+    addGridAction(&menu, T("Копировать имя и IP камеры"), this, [this, id] {
+        if (const CameraEntry *e = m_mgr->find(id)) {
+            const QString info = e->ip.isEmpty()
+                ? e->name
+                : QStringLiteral("%1 (%2)").arg(e->name, e->ip);
+            if (QClipboard *cb = QGuiApplication::clipboard())
+                cb->setText(info);
+            emit message(T("Скопировано в буфер: %1").arg(info));
+        }
+    });
     addGridAction(&menu, T("Закрыть камеру"), this, [pc] { if (pc) pc->clear(true); });
 
     menu.exec(globalPos);
@@ -1805,12 +1996,16 @@ void VideoGrid::saveSnapshot(VideoCell *cell)
 
     QDir dir(Cfg::screenshotDir());
     dir.mkpath(QStringLiteral("."));
-    const QString file = dir.filePath(QStringLiteral("%1_%2.png")
-                                          .arg(safe, QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"))));
-    if (img.save(file, "PNG"))
+    const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz"));
+    const QString file = dir.filePath(QStringLiteral("%1_%2.png").arg(safe, stamp));
+    if (img.save(file, "PNG")) {
+        cell->flash();
+        writePsvmsLog(QStringLiteral("Снимок камеры [%1] сохранён: %2").arg(safe, file));
         emit message(T("Снимок сохранён: %1").arg(QDir::toNativeSeparators(file)));
-    else
+    } else {
+        writePsvmsLog(QStringLiteral("Ошибка сохранения снимка камеры [%1]: %2").arg(safe, file));
         emit message(T("Не удалось сохранить снимок: %1").arg(QDir::toNativeSeparators(file)));
+    }
 }
 
 // Двойной щелчок: камера на весь экран (основной поток)

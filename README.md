@@ -1,6 +1,6 @@
-# PSVMS — Windows build package
+# PSVms — Windows build package
 
-This package contains the PSVMS C++ source, the CMake build definition, the Windows GitHub Actions workflow, and the artwork assets required at runtime.
+This package contains the PSVms C++ source, the CMake build definition, the Windows GitHub Actions workflow, and the artwork assets required at runtime.
 
 ## What changed
 
@@ -24,8 +24,8 @@ This directly addresses the MSVC `C2026` oversized-string error and removes the 
 
 1. Back up the existing repository.
 2. Replace the repository contents with the contents of this package, including the hidden `.github` folder.
-3. Commit and push to `main` or `master`, or start **Actions → Build PSVMS for Windows → Run workflow**.
-4. When the workflow succeeds, download the `PSVMS-windows` artifact. Keep the `assets` folder beside `PSVMS.exe`.
+3. Commit and push to `main` or `master`, or start **Actions → Build PSVms for Windows → Run workflow**.
+4. When the workflow succeeds, download the `PSVms-windows` artifact. Keep the `assets` folder beside `PSVms.exe`.
 
 ## Local build
 
@@ -77,7 +77,7 @@ This update makes the build more maintainable without risking a large rewrite:
 - Keeps C++17 deliberately for compatibility with the current Qt 6.8 / FFmpeg / camera integration. C++17 is still a modern standard; moving to C++20 alone would not fix runtime or build defects.
 - Enables stricter compiler diagnostics (`/W4`, `/permissive-`, and correct `__cplusplus` reporting on MSVC; `-Wall -Wextra -Wpedantic` on GCC/Clang). Warnings are not treated as errors yet because the existing application has not had a full warning-cleanup pass.
 - Disables compiler-specific language extensions for more predictable builds.
-- Adds a second GitHub Actions artifact named `PSVMS-source-project`, containing the complete editable source project. The existing `PSVMS-windows` artifact remains the packaged application.
+- Adds a second GitHub Actions artifact named `PSVms-source-project`, containing the complete editable source project. The existing `PSVms-windows` artifact remains the packaged application.
 
 ### Next engineering stages
 
@@ -105,9 +105,9 @@ The code has not been split into modules in this update: its current declaration
 
 ## Диагностика ошибок и журналы (LOG)
 
-При каждом запуске PSVMS создаёт отдельный файл журнала с датой и временем.
-Обычно журналы находятся в папке `logs` рядом с `PSVMS.exe`: `logs/PSVMS_ГГГГ-ММ-ДД_ЧЧ-ММ-СС.log`.
-Если папка программы защищена от записи, журнал автоматически сохраняется в пользовательской папке Windows (`%LOCALAPPDATA%\PSVMS\PSVMS\logs`).
+При каждом запуске PSVms создаёт отдельный файл журнала с датой и временем.
+Обычно журналы находятся в папке `logs` рядом с `PSVms.exe`: `logs/PSVms_ГГГГ-ММ-ДД_ЧЧ-ММ-СС.log`.
+Если папка программы защищена от записи, журнал автоматически сохраняется в пользовательской папке Windows (`__PROTECTED_PSVms_5__\PSVms\logs`).
 
 В журнал записываются этапы запуска (заставка, авторизация, создание менеджера камер и главного окна), сообщения Qt, предупреждения, критические ошибки и сведения о необработанных исключениях Windows/C++. При проблеме после заставки откройте самый новый `.log` и отправьте его разработчику целиком. В журнал не следует вручную добавлять пароли камер.
 
@@ -116,7 +116,7 @@ The code has not been split into modules in this update: its current declaration
 - В каждую строку журнала добавляются точная дата/время с миллисекундами и ID потока.
 - Сообщения Qt теперь содержат уровень, категорию, файл, строку и функцию (если Qt предоставил эти данные).
 - Секреты в распространённых форматах URL и полях `password` / `token` / `authorization` маскируются перед записью.
-- Каталог журнала выбирается последовательно: `logs` рядом с программой, `AppLocalDataLocation/logs`, затем временный каталог `PSVMS_logs`.
+- Каталог журнала выбирается последовательно: `logs` рядом с программой, `AppLocalDataLocation/logs`, затем временный каталог `__PROTECTED_PSVms_7__`.
 - Проверяется возможность реальной записи, а не только создания каталога.
 - Старые журналы автоматически очищаются: сохраняются последние 20 запусков.
 - В заголовок журнала добавлены версия Qt, ОС, архитектура, тип сборки, компилятор, PID, рабочий каталог и аргументы запуска.
@@ -130,7 +130,7 @@ The code has not been split into modules in this update: its current declaration
 
 ## Дамп памяти Windows при аварии (этап 3)
 
-При необработанном структурном исключении Windows (например, `0xC0000005`, access violation) PSVMS дополнительно пытается сохранить мини-дамп памяти `.dmp` рядом с журналом. Имя файла содержит дату, время и PID процесса. Для создания используется системная `DbgHelp.dll`, загружаемая динамически, поэтому отдельная библиотека для линковки не требуется. Дамп содержит контекст исключения и сведения о потоках; строка `[CRASH]` в `.log` сообщает результат создания и путь к файлу.
+При необработанном структурном исключении Windows (например, `0xC0000005`, access violation) PSVms дополнительно пытается сохранить мини-дамп памяти `.dmp` рядом с журналом. Имя файла содержит дату, время и PID процесса. Для создания используется системная `DbgHelp.dll`, загружаемая динамически, поэтому отдельная библиотека для линковки не требуется. Дамп содержит контекст исключения и сведения о потоках; строка `[CRASH]` в `.log` сообщает результат создания и путь к файлу.
 
 Если Windows не может создать дамп (например, из-за нехватки места или ограничений доступа), основной журнал всё равно записывает сведения об аварии. Мини-дамп может содержать фрагменты данных процесса, поэтому перед отправкой учитывайте его конфиденциальность. Для диагностики отправляйте `.log` и соответствующий `.dmp` вместе.
 
@@ -138,4 +138,4 @@ The code has not been split into modules in this update: its current declaration
 
 ## Редизайн интерфейса —  PREMIUM
 
-В актуальной версии PSVMS используется новая тёмно-синяя система оформления с бирюзовыми акцентами, скруглёнными поверхностями, обновлённой типографикой и единым набором значков. Новые обои, заставка и аватар встроены в ресурсы приложения. Заставка содержит анимированное HUD-кольцо и сканирующую линию. Подробности — в `REDESIGN_NOTES_RU.md`.
+В актуальной версии PSVms используется новая тёмно-синяя система оформления с бирюзовыми акцентами, скруглёнными поверхностями, обновлённой типографикой и единым набором значков. Новые обои, заставка и аватар встроены в ресурсы приложения. Заставка содержит анимированное HUD-кольцо и сканирующую линию. Подробности — в `REDESIGN_NOTES_RU.md`.

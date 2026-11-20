@@ -1,4 +1,4 @@
-// PSVMS — все исходники программы в одном файле.
+// PSVms — все исходники программы в одном файле.
 // Собирается вместе с CMakeLists.txt из этой же папки (нужны Qt 6.8+, FFmpeg и OpenSSL).
 // Файл собран автоматически из проекта; секции помечены исходными именами файлов.
 
@@ -9,22 +9,22 @@
 // ======================================================================
 //
 //   --- README.md ---
-//   # PSVMS — видеонаблюдение для Windows (проект в одном файле)
+//   # PSVms — видеонаблюдение для Windows (проект в одном файле)
 //
-//   Весь код программы лежит в одном файле `psvms.cpp`. Готового `PSVMS.exe` в архиве нет:
+//   Весь код программы лежит в одном файле `psvms.cpp`. Готового `PSVms.exe` в архиве нет:
 //   его собирает GitHub (бесплатно), компьютер с Visual Studio для этого не нужен.
 //
-//   ## Как получить PSVMS.exe
+//   ## Как получить PSVms.exe
 //
 //   1. Зайдите на github.com, создайте аккаунт и новый репозиторий (New repository).
 //   2. Распакуйте этот архив и перетащите мышью **все файлы и папку `.github`** на страницу репозитория
 //      (ссылка «uploading an existing file»), затем нажмите **Commit changes**.
 //      Если папка `.github` не загрузилась: Add file → Create new file, введите имя
 //      `.github/workflows/build-windows.yml` и вставьте текст из раздела «Файл сборки» ниже.
-//   3. Откройте вкладку **Actions**, выберите «Build PSVMS for Windows» и нажмите **Run workflow**.
+//   3. Откройте вкладку **Actions**, выберите «Build PSVms for Windows» и нажмите **Run workflow**.
 //      Первая сборка идёт 20-40 минут (собирается FFmpeg).
-//   4. Когда сборка закончится, откройте её страницу и внизу, в разделе **Artifacts**, скачайте `PSVMS-windows`.
-//      Распакуйте архив правой кнопкой («Извлечь всё») и запустите `PSVMS.exe` из этой папки.
+//   4. Когда сборка закончится, откройте её страницу и внизу, в разделе **Artifacts**, скачайте `PSVms-windows`.
+//      Распакуйте архив правой кнопкой («Извлечь всё») и запустите `PSVms.exe` из этой папки.
 //
 //   Если сборка завершилась красным крестиком, откройте шаг **Build**, скопируйте строки со словом `error`
 //   и отправьте их разработчику: код ещё ни разу не компилировался.
@@ -43,10 +43,10 @@
 //   ## Файл сборки (`.github/workflows/build-windows.yml`)
 //
 //   ```yaml
-//   name: Build PSVMS for Windows
+//   name: Build PSVms for Windows
 //
-//   # Запуск: вкладка Actions -> "Build PSVMS for Windows" -> Run workflow.
-//   # Готовая программа появится внизу страницы запуска в разделе Artifacts (PSVMS-windows.zip).
+//   # Запуск: вкладка Actions -> "Build PSVms for Windows" -> Run workflow.
+//   # Готовая программа появится внизу страницы запуска в разделе Artifacts (PSVms-windows.zip).
 //   on:
 //     workflow_dispatch:
 //     push:
@@ -85,18 +85,18 @@
 //         - name: Collect Qt libraries next to the exe
 //           shell: pwsh
 //           run: |
-//             & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations build\Release\PSVMS.exe
+//             & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations build\Release\PSVms.exe
 //
 //         - name: Upload
 //           uses: actions/upload-artifact@v4
 //           with:
-//             name: PSVMS-windows
+//             name: PSVms-windows
 //             path: build/Release/
 //   ```
 //
 //   --- CMakeLists.txt ---
 //   cmake_minimum_required(VERSION 3.21)
-//   project(PSVMS LANGUAGES CXX)
+//   project(PSVms LANGUAGES CXX)
 //
 //   set(CMAKE_CXX_STANDARD 17)
 //   set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -132,19 +132,19 @@
 //   endif()
 //
 //   # ---- Всё приложение — один файл исходников ----
-//   qt_add_executable(PSVMS WIN32 psvms.cpp)
+//   qt_add_executable(PSVms WIN32 psvms.cpp)
 //   find_package(OpenSSL REQUIRED)
-//   target_link_libraries(PSVMS PRIVATE
+//   target_link_libraries(PSVms PRIVATE
 //       Qt6::Widgets Qt6::Multimedia Qt6::MultimediaWidgets Qt6::Sql Qt6::Network
 //       OpenSSL::Crypto ${FFMPEG_TARGET})
 //   if(WIN32)
-//       target_link_libraries(PSVMS PRIVATE dwmapi)   # тёмная рамка окон в Windows 10/11
+//       target_link_libraries(PSVms PRIVATE dwmapi)   # тёмная рамка окон в Windows 10/11
 //   endif()
 //
 //   --- build_windows.bat ---
 //   @echo off
 //   REM ============================================================
-//   REM  Build PSVMS.exe on Windows
+//   REM  Build PSVms.exe on Windows
 //   REM  Requirements:
 //   REM    1) Visual Studio 2022 with "Desktop development with C++"
 //   REM    2) Qt 6.5+ for MSVC 2022 64-bit (Qt Multimedia + Qt SQL)
@@ -175,16 +175,16 @@
 //   cmake --build build --config Release || exit /b 1
 //
 //   echo [4/4] Collecting Qt libraries next to the exe...
-//   "%QT_DIR%\bin\windeployqt.exe" --release --no-translations build\Release\PSVMS.exe || exit /b 1
+//   "%QT_DIR%\bin\windeployqt.exe" --release --no-translations build\Release\PSVms.exe || exit /b 1
 //
 //   echo.
-//   echo Done. Ready-to-run folder: build\Release   (PSVMS.exe)
+//   echo Done. Ready-to-run folder: build\Release   (PSVms.exe)
 //
 //   --- .github/workflows/build-windows.yml ---
-//   name: Build PSVMS for Windows
+//   name: Build PSVms for Windows
 //
-//   # Запуск: вкладка Actions -> "Build PSVMS for Windows" -> Run workflow.
-//   # Готовая программа появится внизу страницы запуска в разделе Artifacts (PSVMS-windows.zip).
+//   # Запуск: вкладка Actions -> "Build PSVms for Windows" -> Run workflow.
+//   # Готовая программа появится внизу страницы запуска в разделе Artifacts (PSVms-windows.zip).
 //   on:
 //     workflow_dispatch:
 //     push:
@@ -223,12 +223,12 @@
 //         - name: Collect Qt libraries next to the exe
 //           shell: pwsh
 //           run: |
-//             & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations build\Release\PSVMS.exe
+//             & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --no-translations build\Release\PSVms.exe
 //
 //         - name: Upload
 //           uses: actions/upload-artifact@v4
 //           with:
-//             name: PSVMS-windows
+//             name: PSVms-windows
 //             path: build/Release/
 //
 // ======================================================================
@@ -663,7 +663,7 @@ inline constexpr const char *kAuthor = "P.Sveshnikov";
 
 inline QString title()
 {
-    return QString::fromUtf8("PSVMS");
+    return QString::fromUtf8("PSVms");
 }
 
 // Выход из учётной записи: окно закрывается, затем снова спрашивается вход
@@ -1411,6 +1411,7 @@ public:
     VideoGrid *grid() const { return m_grid; }
     void openArchiveForSelectedCamera();
     void exportArchiveIntervalForCamera(const QString &cameraId, qint64 fromMs, qint64 toMs);
+    void applyLayoutMetricsNow();
 
 signals:
     void addCameraRequested();
@@ -1466,13 +1467,35 @@ class CameraStatusDialog;
 // Проверка встроенного пароля разработчика. В исходнике хранится только PBKDF2-хэш,
 // исходный пароль не записывается ни в настройки, ни в файлы программы.
 
-// Окно PSVMS: слева постоянно раскрытое меню (Мониторинг, Устройства, События, Настройки, Язык),
+// Окно PSVms: слева постоянно раскрытое меню (Мониторинг, Устройства, События, Настройки, Язык),
 // сверху панель со счётчиками камер и кнопкой облака Hik-Connect, внизу строка состояния.
 namespace {
 QIcon makeAppIcon();
 QIcon makeCellIcon(const QString &kind, const QColor &color = QColor(255, 224, 104));
 void openYandexAssistant(QWidget *parent);
 QWidget *buildAiHomePanel(QWidget *parent);
+
+class VpnController : public QObject {
+    Q_OBJECT
+public:
+    explicit VpnController(QObject *parent = nullptr);
+    bool isConnected() const { return m_connected; }
+    QString currentProfile() const;
+    QString currentMode() const;
+    QString statusText() const;
+    void connectProfile(const QString &profileName, const QString &mode, const QString &endpointOrConfig);
+    void disconnectProfile();
+
+signals:
+    void stateChanged(bool connected, const QString &summary);
+    void message(const QString &text);
+
+private:
+    bool m_connected = false;
+    QString m_profile;
+    QString m_mode;
+    QString m_endpoint;
+};
 }
 
 class MainWindow : public QMainWindow {
@@ -1909,7 +1932,7 @@ private:
 // ======================================================================
 class QSplashScreen;
 
-// Заставка «PSVMS» при запуске программы
+// Заставка «PSVms» при запуске программы
 QSplashScreen *createSplash();
 void finishSplash(QSplashScreen *splash);   // плавно скрывает и удаляет заставку
 
@@ -1945,7 +1968,7 @@ private:
 inline QString appStyleSheet()
 {
     // PSVms : HikCentral Professional Dark Pro typography & button architecture
-    return QStringLiteral(R"PSVMS(
+    return QStringLiteral(R"PSVms(
 * { font-family:"Segoe UI", "Bahnschrift", "Arial", sans-serif; font-size:10pt; }
 QWidget { color:#ECF0F5; background:transparent; }
 QLabel, QAbstractButton { min-width:0; }
@@ -2288,7 +2311,7 @@ QSlider#cellVolume::sub-page:vertical { background:#F5B700; border-radius:3px; }
 QSlider#cellVolume::add-page:vertical { background:#1A1F28; border-radius:3px; }
 QSlider#cellVolume::handle:vertical { background:#F5B700; border:1px solid #FFFFFF; width:14px; height:14px; margin:-4px -4px; border-radius:7px; }
 QStatusBar { background:#0D0F12; color:#8D97A8; border-top:1px solid #262C38; padding:2px 6px; font-family:"Segoe UI", sans-serif; font-size:9pt; }
-)PSVMS");
+)PSVms");
 }
 
 // app/top_bar.h
@@ -2550,9 +2573,12 @@ private:
     QTimer *m_retry = nullptr;
     QTimer *m_connectTimeout = nullptr; // контроль времени до первого декодированного кадра
     qint64 m_connectStartedMs = 0;
+    qint64 m_firstFrameMs = -1;
     bool m_firstFrameReceived = false;
+    bool m_autoPaused = false;
     int m_retryDelayMs = 3000; // экспоненциальная пауза переподключения: 3–30 секунд
     int m_retryAttempt = 0;    // счётчик попыток переподключения с момента успешного потока
+    QString m_lastStopReason;
     QLabel *m_flash = nullptr;
     QGraphicsOpacityEffect *m_flashFx = nullptr;
     QGraphicsDropShadowEffect *m_frameGlow = nullptr;
@@ -2613,6 +2639,8 @@ public slots:
     void setPatrolIntervalSec(int sec);            // интервал автообхода в секундах
     void setGridStreamQuality(int quality);        // 0=авто, 1=основной поток, 2=подпоток для активных камер
     void setGridLayoutPreset(int count);           // быстрое переключение раскладки (1, 4, 9, 16)
+    void setAutoPaused(bool paused);               // автопауза скрытой сетки для экономии CPU/сети
+    void applyPresetNamed(const QString &name);    // применить расширенный пресет (раскладка/поток/автообход)
 
 signals:
     void message(const QString &text);
@@ -2636,6 +2664,8 @@ private:
     void editCamera(const QString &cameraId);
     void saveSnapshot(VideoCell *cell);
     void openFullscreen(VideoCell *cell);
+    int activePlaybackCount() const;
+    int maxActiveStreamsLimit() const;
 
     CameraManager *m_mgr;
     QGridLayout *m_grid = nullptr;
@@ -2754,7 +2784,7 @@ private:
 // Данные хранятся в data/<machine-id> рядом с EXE. При переносе папки на другой ПК
 // создаётся отдельный профиль; камеры и настройки не переезжают вместе с флешкой.
 // Папка может быть недоступна для записи (например, программа установлена в Program Files) —
-// тогда используется запасной вариант в %LOCALAPPDATA%\PSVMS.
+// тогда используется запасной вариант в __PROTECTED_PSVms_5__.
 namespace AppPaths {
 
 QString dataDir();            // <папка программы>/data/<machine-id> (или запасной путь)

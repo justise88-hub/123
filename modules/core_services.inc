@@ -1,4 +1,4 @@
-// PSVMS module: Сервисы ядра: пути, резервные копии, RTSP, ONVIF и пользователи
+// PSVms module: Сервисы ядра: пути, резервные копии, RTSP, ONVIF и пользователи
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -9,7 +9,7 @@ namespace {
 QString computeDataDir(const QString &applicationDir)
 {
     // Профиль привязан к компьютеру. Это предотвращает автоматический перенос
-    // списка камер и локальных учётных данных вместе с USB-копией PSVMS на другой ПК.
+    // списка камер и локальных учётных данных вместе с USB-копией PSVms на другой ПК.
     QByteArray machineId = QSysInfo::machineUniqueId();
     if (machineId.isEmpty())
         machineId = QSysInfo::machineHostName().toUtf8();
@@ -51,7 +51,7 @@ QString AppPaths::dataDir()
 
 void AppPaths::initSettingsLocation(const QString &applicationDir)
 {
-    // Профиль строго привязан к компьютеру: при переносе папки PSVMS на другой ПК
+    // Профиль строго привязан к компьютеру: при переносе папки PSVms на другой ПК
     // будет создан новый каталог data/<machine-id>, старые камеры с флешки не загрузятся.
     // При этом на одном и том же ПК камеры и настройки сохраняются между запусками.
     if (g_psvmsDataDir.isEmpty())
@@ -106,7 +106,7 @@ bool Backup::exportTo(const QString &path, QString *error)
             keys.insert(k, QJsonValue::fromVariant(s.value(k)));
     }
     QJsonObject root;
-    root.insert(QStringLiteral("app"), QStringLiteral("PSVMS"));
+    root.insert(QStringLiteral("app"), QStringLiteral("PSVms"));
     root.insert(QStringLiteral("version"), 1);
     root.insert(QStringLiteral("created"), QDateTime::currentDateTime().toString(Qt::ISODate));
     root.insert(QStringLiteral("settings"), keys);
@@ -130,7 +130,7 @@ bool Backup::importFrom(const QString &path, QString *error)
     QJsonParseError pe;
     const QJsonDocument doc = QJsonDocument::fromJson(f.readAll(), &pe);
     if (pe.error != QJsonParseError::NoError || !doc.isObject()
-        || doc.object().value(QStringLiteral("app")).toString() != QLatin1String("PSVMS")) {
+        || doc.object().value(QStringLiteral("app")).toString() != __PROTECTED_PSVms_6__) {
         if (error) *error = T("Файл повреждён или не является резервной копией программы.");
         return false;
     }
@@ -397,7 +397,10 @@ void CameraWorker::recordSession(RecordingIndex &index, bool &gotData)
 
     AVDictionary *opts = nullptr;
     av_dict_set(&opts, "rtsp_transport", "tcp", 0);
-    const QByteArray ioTimeout = QByteArray::number(qint64(m_cfg.ioTimeoutMs) * 1000);
+    av_dict_set(&opts, "max_delay", "500000", 0);
+    av_dict_set(&opts, "reorder_queue_size", "32", 0);
+    const int effectiveTimeoutMs = qMax(m_cfg.ioTimeoutMs, 6000);
+    const QByteArray ioTimeout = QByteArray::number(qint64(effectiveTimeoutMs) * 1000);
     // Разные сборки FFmpeg используют разные имена таймаута RTSP/I/O.
     av_dict_set(&opts, "timeout", ioTimeout.constData(), 0);
     av_dict_set(&opts, "stimeout", ioTimeout.constData(), 0);
@@ -1089,7 +1092,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Новое название камеры:"), QStringLiteral("New camera name:")},
         {QStringLiteral("Удалить эту камеру / канал регистратора…"), QStringLiteral("Delete this camera / recorder channel…")},
         {QStringLiteral("Удаление устройства"), QStringLiteral("Delete device")},
-        {QStringLiteral("Удалить «%1» из PSVMS?\nЗапись будет остановлена, устройство исчезнет из списка. Уже сохранённые файлы архива останутся на диске."), QStringLiteral("Remove “%1” from PSVMS?\nRecording will stop and the device will be removed from the list. Existing archive files will remain on disk.")},
+        {QStringLiteral("Удалить «%1» из PSVms?\nЗапись будет остановлена, устройство исчезнет из списка. Уже сохранённые файлы архива останутся на диске."), QStringLiteral("Remove “%1” from PSVms?\nRecording will stop and the device will be removed from the list. Existing archive files will remain on disk.")},
         {QStringLiteral("Диапазон IP:"), QStringLiteral("IP range:")},
         {QStringLiteral("Для этого адреса шаблон потоков неизвестен: введите адрес вручную"), QStringLiteral("No stream template is known for this address: enter the address manually")},
         {QStringLiteral("Добавить"), QStringLiteral("Add")},
@@ -1433,9 +1436,9 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Удалить выбранное"), QStringLiteral("Delete selected")},
         {QStringLiteral("Удалить камеру"), QStringLiteral("Delete camera")},
         {QStringLiteral("Удалить все камеры"), QStringLiteral("Delete all cameras")},
-        {QStringLiteral("Удалить ВСЕ камеры и каналы регистраторов (%1) из PSVMS?\nВсе потоки и запись будут остановлены. Уже сохранённые файлы архива останутся на диске. Это действие нельзя отменить."), QStringLiteral("Delete ALL cameras and recorder channels (%1) from PSVMS?\nAll streams and recording will stop. Existing archive files will remain on disk. This action cannot be undone.")},
+        {QStringLiteral("Удалить ВСЕ камеры и каналы регистраторов (%1) из PSVms?\nВсе потоки и запись будут остановлены. Уже сохранённые файлы архива останутся на диске. Это действие нельзя отменить."), QStringLiteral("Delete ALL cameras and recorder channels (%1) from PSVms?\nAll streams and recording will stop. Existing archive files will remain on disk. This action cannot be undone.")},
         {QStringLiteral("Удалить все"), QStringLiteral("Delete all")},
-        {QStringLiteral("Удалить все камеры и каналы регистраторов из списка PSVMS"), QStringLiteral("Remove all cameras and recorder channels from the PSVMS list")},
+        {QStringLiteral("Удалить все камеры и каналы регистраторов из списка PSVms"), QStringLiteral("Remove all cameras and recorder channels from the PSVms list")},
         {QStringLiteral("Удалить пользователя «%1»?"), QStringLiteral("Delete the user “%1”?")},
         {QStringLiteral("Удалить шаблон"), QStringLiteral("Delete template")},
         {QStringLiteral("Укажите IP-адрес устройства."), QStringLiteral("Enter the device IP address.")},
@@ -1467,7 +1470,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Аналоговая камера (карта видеозахвата)"), QStringLiteral("Analog camera (video capture card)")},
         {QStringLiteral("Аналоговую камеру (карта видеозахвата)…"), QStringLiteral("Add analog camera (video capture card)…")},
         {QStringLiteral("Архив — полноэкранный просмотр"), QStringLiteral("Archive — full-screen playback")},
-        {QStringLiteral("Блокировать PSVMS при бездействии"), QStringLiteral("Lock PSVMS when idle")},
+        {QStringLiteral("Блокировать PSVms при бездействии"), QStringLiteral("Lock PSVms when idle")},
         {QStringLiteral("Быстрое добавление по RTSP"), QStringLiteral("Quick add via RTSP")},
         {QStringLiteral("В демо-режиме доступны первые 10 подключённых камер. Остальные устройства не загружены."), QStringLiteral("Demo mode supports the first 10 connected cameras. Other devices were not loaded.")},
         {QStringLiteral("В демо-режиме одновременно доступны не более 10 камер. Лишние камеры удалены из списка подключений."), QStringLiteral("Demo mode supports up to 10 cameras at a time. Additional cameras were removed from the connection list.")},
@@ -1487,7 +1490,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Вы"), QStringLiteral("You")},
         {QStringLiteral("Выберите камеру и дату, затем откройте нужную запись."), QStringLiteral("Select a camera and date, then open a recording.")},
         {QStringLiteral("Выберите поворотную камеру, добавленную по ONVIF"), QStringLiteral("Select a PTZ camera added via ONVIF")},
-        {QStringLiteral("Выберите файл лицензии PSVMS"), QStringLiteral("Select a PSVMS license file")},
+        {QStringLiteral("Выберите файл лицензии PSVms"), QStringLiteral("Select a PSVms license file")},
         {QStringLiteral("Голосовое управление"), QStringLiteral("Voice control")},
         {QStringLiteral("Голосовое управление в этой версии доступно в Windows."), QStringLiteral("Voice control is available on Windows in this version.")},
         {QStringLiteral("Голосовое управление включено. Скажите, например: «покажи камеры» или «полный экран»"), QStringLiteral("Voice control is on. Try saying “show cameras” or “full screen”.")},
@@ -1515,7 +1518,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Защита Administrator"), QStringLiteral("Administrator security")},
         {QStringLiteral("Здесь появятся ответы ИИ-помощника."), QStringLiteral("AI assistant replies will appear here.")},
         {QStringLiteral("Здравствуйте! Помогу с подключением камер, RTSP/ONVIF, портами и настройкой программы."), QStringLiteral("Hello! I can help with camera connections, RTSP/ONVIF, ports, and application settings.")},
-        {QStringLiteral("ИИ-помощник PSVMS — Yandex"), QStringLiteral("PSVMS AI assistant — Yandex")},
+        {QStringLiteral("ИИ-помощник PSVms — Yandex"), QStringLiteral("PSVms AI assistant — Yandex")},
         {QStringLiteral("ИИ-помощник отключён в настройках."), QStringLiteral("The AI assistant is disabled in Settings.")},
         {QStringLiteral("Идентификатор каталога Yandex Cloud (Folder ID)"), QStringLiteral("Yandex Cloud folder ID (Folder ID)")},
         {QStringLiteral("Изменения сохранены. Новое масштабирование применится после перезапуска программы."), QStringLiteral("Changes saved. The new scaling will take effect after restarting the application.")},
@@ -1525,7 +1528,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Камера требует пароль"), QStringLiteral("Camera requires a password")},
         {QStringLiteral("Камеры не в сети"), QStringLiteral("Offline cameras")},
         {QStringLiteral("Лимит демо-версии — 10 камер. Активируйте Pro-версию в настройках, чтобы добавить больше."), QStringLiteral("Demo limit: 10 cameras. Activate Pro in Settings to add more.")},
-        {QStringLiteral("Лицензии PSVMS (*.lic);;Все файлы (*.*)"), QStringLiteral("PSVMS licenses (*.lic);;All files (*.*)")},
+        {QStringLiteral("Лицензии PSVms (*.lic);;Все файлы (*.*)"), QStringLiteral("PSVms licenses (*.lic);;All files (*.*)")},
         {QStringLiteral("Лицензия"), QStringLiteral("License")},
         {QStringLiteral("Лицензия активирована"), QStringLiteral("License activated")},
         {QStringLiteral("Лицензия не активирована"), QStringLiteral("License not activated")},
@@ -1534,7 +1537,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("Модель"), QStringLiteral("Model")},
         {QStringLiteral("Модель камеры или регистратора (необязательно)"), QStringLiteral("Camera or recorder model (optional)")},
         {QStringLiteral("Найдено: %1"), QStringLiteral("Found: %1")},
-        {QStringLiteral("Напишите вопрос о камерах, регистраторах или настройке PSVMS…"), QStringLiteral("Ask a question about cameras, recorders, or PSVMS settings…")},
+        {QStringLiteral("Напишите вопрос о камерах, регистраторах или настройке PSVms…"), QStringLiteral("Ask a question about cameras, recorders, or PSVms settings…")},
         {QStringLiteral("Настройки доступны только администратору"), QStringLiteral("Settings are available to administrators only")},
         {QStringLiteral("Настройки доступны только администратору."), QStringLiteral("Settings are available to administrators only.")},
         {QStringLiteral("Не удалось завершить экспорт: %1"), QStringLiteral("Could not complete the export: %1")},
@@ -1574,7 +1577,7 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("По RTSP-адресу…"), QStringLiteral("By RTSP URL…")},
         {QStringLiteral("Подключение к камере…"), QStringLiteral("Connecting to camera…")},
         {QStringLiteral("Подключить"), QStringLiteral("Connect")},
-        {QStringLiteral("Подпись проверена. Полная версия PSVMS активирована на этом компьютере."), QStringLiteral("Signature verified. The full version of PSVMS is activated on this computer.")},
+        {QStringLiteral("Подпись проверена. Полная версия PSVms активирована на этом компьютере."), QStringLiteral("Signature verified. The full version of PSVms is activated on this computer.")},
         {QStringLiteral("Поиск записи по времени…"), QStringLiteral("Search recordings by time…")},
         {QStringLiteral("Поиск камер в сети: Hikvision, HiWatch, Polyvision, Dahua"), QStringLiteral("Discover cameras on the network: Hikvision, HiWatch, Polyvision, Dahua")},
         {QStringLiteral("Поиск камер и регистраторов в вашей сети"), QStringLiteral("Search for cameras and recorders on your network")},
@@ -1673,8 +1676,8 @@ const QHash<QString, QString> &englishDict()
         {QStringLiteral("ID этого компьютера для выпуска лицензии:\n%1"), QStringLiteral("This computer’s ID for license issuance:\n%1")},
         {QStringLiteral("IP-адрес / имя узла"), QStringLiteral("IP address / host name")},
         {QStringLiteral("ONVIF — обнаружение/управление (часто HTTP)"), QStringLiteral("ONVIF — discovery/control (often HTTP)")},
-        {QStringLiteral("PSVMS — DEMO ВЕРСИЯ"), QStringLiteral("PSVMS — DEMO VERSION")},
-        {QStringLiteral("PSVMS — полная Pro-версия"), QStringLiteral("PSVMS — full Pro version")},
+        {QStringLiteral("PSVms — DEMO ВЕРСИЯ"), QStringLiteral("PSVms — DEMO VERSION")},
+        {QStringLiteral("PSVms — полная Pro-версия"), QStringLiteral("PSVms — full Pro version")},
         {QStringLiteral("PTZ поддерживается"), QStringLiteral("PTZ supported")},
         {QStringLiteral("TCP-соединение установлено. Служба принимает подключения на этом порту."), QStringLiteral("TCP connection established. A service is accepting connections on this port.")},
         {QStringLiteral("UDP-пакет отправлен. Это НЕ подтверждает, что порт открыт: UDP не устанавливает соединение, а ответ зависит от службы устройства."), QStringLiteral("UDP packet sent. This does NOT confirm that the port is open: UDP does not establish a connection, and a reply depends on the device service.")},
@@ -3065,7 +3068,7 @@ void RtspProbe::request(int tmpl, const QByteArray &authHeader, bool authed)
     m_lastUri = QStringLiteral("rtsp://%1:%2").arg(m_host).arg(m_port) + path;
 
     QByteArray req = "DESCRIBE " + m_lastUri.toUtf8() + " RTSP/1.0\r\nCSeq: 2\r\n"
-                     "User-Agent: PSVMS\r\nAccept: application/sdp\r\n";
+                     "User-Agent: PSVms\r\nAccept: application/sdp\r\n";
     if (!authHeader.isEmpty())
         req += authHeader + "\r\n";
     req += "\r\n";
@@ -3257,7 +3260,7 @@ bool dpapiProtect(const QByteArray &input, QByteArray *output)
     inBlob.pbData = reinterpret_cast<BYTE *>(const_cast<char *>(input.constData()));
     inBlob.cbData = static_cast<DWORD>(input.size());
     DATA_BLOB outBlob{};
-    static const wchar_t description[] = L"PSVMS camera credentials";
+    static const wchar_t description[] = L"PSVms camera credentials";
     if (!CryptProtectData(&inBlob, description, nullptr, nullptr, nullptr,
                           CRYPTPROTECT_UI_FORBIDDEN, &outBlob))
         return false;

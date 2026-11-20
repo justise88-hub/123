@@ -8,7 +8,7 @@ if not exist "%VCPKG_ROOT%\vcpkg.exe" (echo vcpkg not found in %VCPKG_ROOT% & ex
 "%VCPKG_ROOT%\vcpkg.exe" install "ffmpeg[core,avcodec,avformat]:x64-windows" openssl:x64-windows || exit /b 1
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_PREFIX_PATH="%QT_DIR%" -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" || exit /b 1
 cmake --build build --config Release || exit /b 1
-"%QT_DIR%\bin\windeployqt.exe" --release --no-translations build\Release\PSVMS.exe || exit /b 1
+"%QT_DIR%\bin\windeployqt.exe" --release --no-translations build\Release\PSVms.exe || exit /b 1
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0create_shortcuts.ps1" || exit /b 1
-echo PSVMS ready in build\Release
+echo PSVms ready in build\Release
 echo Desktop and Start Menu shortcuts updated

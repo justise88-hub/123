@@ -1,4 +1,4 @@
-// PSVMS module: Запуск приложения
+// PSVms module: Запуск приложения
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -194,7 +194,7 @@ void psvmsPruneOldLogs(const QString &directory)
 {
     QDir dir(directory);
     const QFileInfoList files = dir.entryInfoList(
-        QStringList{QStringLiteral("PSVMS_*.log")}, QDir::Files, QDir::Time);
+        QStringList{QStringLiteral("__PROTECTED_PSVms_8__")}, QDir::Files, QDir::Time);
     // Оставляем последние 20 запусков, не удаляя текущий файл.
     for (int i = 20; i < files.size(); ++i)
         QFile::remove(files.at(i).absoluteFilePath());
@@ -365,7 +365,7 @@ static void initializePsvmsLogging()
     candidates << QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation))
                     .filePath(QStringLiteral("logs"));
     candidates << QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                    .filePath(QStringLiteral("PSVMS_logs"));
+                    .filePath(QStringLiteral("__PROTECTED_PSVms_7__"));
 
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: candidates prepared"));
     for (const QString &candidate : candidates) {
@@ -385,18 +385,18 @@ static void initializePsvmsLogging()
     if (g_psvmsLogDirPath.isEmpty()) {
         // Keep logging active in memory-independent emergency fallback if disk is unavailable.
 #ifdef Q_OS_WIN
-        OutputDebugStringW(L"PSVMS: unable to create a writable log directory\n");
+        OutputDebugStringW(L"PSVms: unable to create a writable log directory\n");
 #endif
         return;
     }
 
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: directory selection complete"));
     const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss"));
-    g_psvmsLogFilePath = QDir(g_psvmsLogDirPath).filePath(QStringLiteral("PSVMS_%1.log").arg(stamp));
+    g_psvmsLogFilePath = QDir(g_psvmsLogDirPath).filePath(QStringLiteral("__PROTECTED_PSVms_9__").arg(stamp));
 #ifdef Q_OS_WIN
     g_psvmsLogFilePathWide = g_psvmsLogFilePath.toStdWString();
     g_psvmsDumpFilePathWide = QDir(g_psvmsLogDirPath)
-        .filePath(QStringLiteral("PSVMS_%1_%2.dmp").arg(stamp).arg(QCoreApplication::applicationPid()))
+        .filePath(QStringLiteral("__PROTECTED_PSVms_10__").arg(stamp).arg(QCoreApplication::applicationPid()))
         .toStdWString();
 #endif
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: before installing Qt message handler"));
@@ -424,7 +424,7 @@ static void initializePsvmsLogging()
     writePsvmsLog(QStringLiteral("============================================================"));
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: after first writePsvmsLog"));
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: before startup header write"));
-    writePsvmsLog(QStringLiteral("Запуск PSVMS; журнал: %1").arg(g_psvmsLogFilePath));
+    writePsvmsLog(QStringLiteral("Запуск PSVms; журнал: %1").arg(g_psvmsLogFilePath));
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: after startup header write"));
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: before app version write"));
     writePsvmsLog(QStringLiteral("Версия приложения: %1").arg(App::title()));
@@ -458,12 +458,12 @@ static QString psvmsCreateEarlyStartupLog(int argc, char *argv[])
 {
     QString exePath = argc > 0 && argv && argv[0]
         ? QFileInfo(QString::fromLocal8Bit(argv[0])).absoluteFilePath()
-        : QDir::current().filePath(QStringLiteral("PSVMS.exe"));
+        : QDir::current().filePath(QStringLiteral("PSVms.exe"));
     const QString logDir = QDir(QFileInfo(exePath).absolutePath()).filePath(QStringLiteral("logs"));
     if (!QDir().mkpath(logDir))
         return {};
     const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz"));
-    const QString filePath = QDir(logDir).filePath(QStringLiteral("PSVMS_early_%1_%2.log")
+    const QString filePath = QDir(logDir).filePath(QStringLiteral("__PROTECTED_PSVms_11__")
         .arg(stamp).arg(QCoreApplication::applicationPid()));
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
@@ -493,23 +493,23 @@ int main(int argc, char *argv[])
 {
 #ifdef Q_OS_WIN
     // Захватываем системный mutex ДО QApplication и любых окон/инициализации.
-    // Имя фиксированное для всех копий PSVMS текущего пользователя/сеанса Windows.
-    HANDLE psvmsInstanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\PSVMS_SingleInstance_7F3A91C2");
+    // Имя фиксированное для всех копий PSVms текущего пользователя/сеанса Windows.
+    HANDLE psvmsInstanceMutex = CreateMutexW(nullptr, TRUE, L"__PROTECTED_PSVms_0__");
     if (!psvmsInstanceMutex) {
-        OutputDebugStringW(L"PSVMS: не удалось создать mutex единственного экземпляра\\n");
+        OutputDebugStringW(L"PSVms: не удалось создать mutex единственного экземпляра\\n");
         return 10;
     }
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         CloseHandle(psvmsInstanceMutex);
-        OutputDebugStringW(L"PSVMS: повторный запуск заблокирован; первый экземпляр уже работает\\n");
+        OutputDebugStringW(L"PSVms: повторный запуск заблокирован; первый экземпляр уже работает\\n");
         return 0;
     }
 #endif
     const QString earlyLogPath = psvmsCreateEarlyStartupLog(argc, argv);
     g_psvmsEarlyLogPath = earlyLogPath;
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("main: before application identity"));
-    QCoreApplication::setOrganizationName(QStringLiteral("PSVMS"));
-    QCoreApplication::setApplicationName(QStringLiteral("PSVMS"));
+    QCoreApplication::__PROTECTED_PSVms_2__;
+    QCoreApplication::__PROTECTED_PSVms_3__;
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("main: application identity set"));
 
     // Важно: QSettings должен быть направлен в профиль текущего компьютера ДО
@@ -519,13 +519,31 @@ int main(int argc, char *argv[])
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath,
         QStringLiteral("main: computer-bound settings profile: %1").arg(AppPaths::dataDir()));
 
-    // Масштаб интерфейса задаётся в настройках и применяется при запуске (мониторы с высоким разрешением)
+    // Автомасштабирование по разрешению экрана (1920x1080 компактнее, 3440x1440 без уменьшения)
     {
         psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("main: before reading scale settings"));
         QSettings settings;
         const double presetScale = settings.value(QStringLiteral("ui/scale"), 0.0).toDouble();
         const double manualScale = qBound(75, settings.value(QStringLiteral("ui/manualInterfacePercent"), 100).toInt(), 200) / 100.0;
-        const double scale = (presetScale > 0.0 ? presetScale : 1.0) * manualScale;
+        const bool autoScreenScale = settings.value(QStringLiteral("ui/autoScreenScale"), true).toBool();
+        const double fhdAutoFactor = qBound(70, settings.value(QStringLiteral("ui/fullHdAutoScalePercent"), 85).toInt(), 125) / 100.0;
+
+        double baseScale = presetScale > 0.0 ? presetScale : 1.0;
+        if (presetScale <= 0.0 && autoScreenScale) {
+#ifdef Q_OS_WIN
+            const int scrW = GetSystemMetrics(SM_CXSCREEN);
+            const int scrH = GetSystemMetrics(SM_CYSCREEN);
+            if (scrW > 0 && scrH > 0) {
+                if (scrW <= 1920 && scrH <= 1080) {
+                    baseScale = fhdAutoFactor;
+                } else if (scrW >= 3440) {
+                    baseScale = 1.0;
+                }
+            }
+#endif
+        }
+
+        const double scale = baseScale * manualScale;
         if (scale >= 0.75 && scale <= 4.0 && qAbs(scale - 1.0) > 0.001)
             qputenv("QT_SCALE_FACTOR", QByteArray::number(scale, 'f', 3));
     }
@@ -537,7 +555,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon(QStringLiteral(":/branding/taskbar.png")));
 #ifdef Q_OS_WIN
-    // Если PSVMS запущена непосредственно с USB-накопителя, отслеживаем его
+    // Если PSVms запущена непосредственно с USB-накопителя, отслеживаем его
     // присутствие. При извлечении закрываем главное окно штатно, чтобы камеры,
     // запись и настройки получили обычную процедуру завершения.
     const QString launchedExe = QCoreApplication::applicationFilePath();
@@ -553,7 +571,7 @@ int main(int argc, char *argv[])
         QObject::connect(mediaWatch, &QTimer::timeout, &app, [&app, launchedExe, launchRoot, mediaWatch] {
             if (QFileInfo::exists(launchedExe) && QDir(launchRoot).exists()) return;
             mediaWatch->stop();
-            writePsvmsLog(QStringLiteral("USB-носитель с программой извлечён; закрываются все окна и завершается PSVMS"));
+            writePsvmsLog(QStringLiteral("USB-носитель с программой извлечён; закрываются все окна и завершается PSVms"));
             // Закрываем и главное окно, и модальные диалоги (включая выбор пользователя).
             const auto windows = QApplication::topLevelWidgets();
             for (QWidget *widget : windows) {
@@ -590,14 +608,14 @@ int main(int argc, char *argv[])
                               (GetAsyncKeyState(VK_F12) & 0x8000);
             if (down && !wasDown) {
                 const int answer = MessageBoxW(nullptr,
-                    L"PSVMS будет принудительно закрыта.\n\n"
+                    L"PSVms будет принудительно закрыта.\n\n"
                     L"Используйте это только если программа не отвечает.\n"
                     L"Несохранённые изменения могут быть потеряны.\n\n"
-                    L"Завершить PSVMS сейчас?",
-                    L"PSVMS — аварийное закрытие",
+                    L"Завершить PSVms сейчас?",
+                    L"PSVms — аварийное закрытие",
                     MB_YESNO | MB_ICONWARNING | MB_SYSTEMMODAL | MB_SETFOREGROUND);
                 if (answer == IDYES) {
-                    OutputDebugStringW(L"PSVMS: emergency close requested by Ctrl+Alt+F12\n");
+                    OutputDebugStringW(L"PSVms: emergency close requested by Ctrl+Alt+F12\n");
                     // Не вызываем Qt cleanup: главный поток может держать его mutex.
                     // Windows освободит все ресурсы процесса при завершении.
                     TerminateProcess(GetCurrentProcess(), 0xE001);
@@ -625,8 +643,8 @@ int main(int argc, char *argv[])
         instanceLock.getLockInfo(&ownerPid, &ownerHost, &ownerApp);
         writePsvmsLog(QStringLiteral("Повторный запуск заблокирован. Владелец блокировки: PID=%1, host=%2, app=%3")
             .arg(ownerPid).arg(ownerHost, ownerApp));
-        QMessageBox::information(nullptr, QStringLiteral("PSVMS уже запущен"),
-            QStringLiteral("Программа PSVMS уже работает.\n\nПроверьте открытые окна или завершите предыдущий процесс в Диспетчере задач перед повторным запуском."));
+        QMessageBox::information(nullptr, QStringLiteral("PSVms уже запущен"),
+            QStringLiteral("Программа PSVms уже работает.\n\nПроверьте открытые окна или завершите предыдущий процесс в Диспетчере задач перед повторным запуском."));
         return 0;
     }
     writePsvmsLog(QStringLiteral("Защита от повторного запуска активирована; файл блокировки: %1")
@@ -788,7 +806,7 @@ int main(int argc, char *argv[])
                     previousWallMs = now;
                 }
 
-                // Общая загрузка процессора Windows, независимо от нагрузки PSVMS.
+                // Общая загрузка процессора Windows, независимо от нагрузки PSVms.
                 double systemCpuPercent = -1.0;
                 FILETIME idleTime{}, kernelTime{}, userTime{};
                 static quint64 previousSystemIdle100ns = 0;
@@ -895,15 +913,15 @@ int main(int argc, char *argv[])
         const QString details = QStringLiteral("Перехвачено исключение C++ при запуске/работе: %1")
             .arg(QString::fromLocal8Bit(e.what()));
         writePsvmsLog(details);
-        QMessageBox::critical(nullptr, QStringLiteral("PSVMS — ошибка"), details);
+        QMessageBox::critical(nullptr, QStringLiteral("PSVms — ошибка"), details);
         return 2;
     } catch (...) {
         const QString details = QStringLiteral("Перехвачено неизвестное исключение C++ при запуске/работе");
         writePsvmsLog(details);
-        QMessageBox::critical(nullptr, QStringLiteral("PSVMS — ошибка"), details);
+        QMessageBox::critical(nullptr, QStringLiteral("PSVms — ошибка"), details);
         return 3;
     }
-    writePsvmsLog(QStringLiteral("Завершение PSVMS, код возврата: %1").arg(rc));
+    writePsvmsLog(QStringLiteral("Завершение PSVms, код возврата: %1").arg(rc));
 #ifdef Q_OS_WIN
     if (psvmsInstanceMutex)
         CloseHandle(psvmsInstanceMutex);

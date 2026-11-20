@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(PSVMS LANGUAGES CXX)
+project(PSVms LANGUAGES CXX)
 
 # C++17 is intentionally retained for broad compatibility with Qt 6.8 and
 # third-party camera/FFmpeg SDKs. It is modern C++ and avoids an unnecessary
@@ -11,9 +11,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC OFF)
 set(CMAKE_AUTORCC ON)
 
-option(PSVMS_ENABLE_WARNINGS "Enable useful compiler diagnostics" ON)
+option(PSVms_ENABLE_WARNINGS "Enable useful compiler diagnostics" ON)
 
-if(PSVMS_ENABLE_WARNINGS)
+if(PSVms_ENABLE_WARNINGS)
     if(MSVC)
         add_compile_options(/utf-8 /bigobj /W4 /permissive- /Zc:__cplusplus)
     else()
@@ -48,7 +48,7 @@ endif()
 
 find_package(OpenSSL REQUIRED)
 
-set(PSVMS_MODULES
+set(PSVms_MODULES
     modules/app_dialogs.inc
     modules/app_pages.inc
     modules/app_shell.inc
@@ -58,14 +58,14 @@ set(PSVMS_MODULES
     modules/application_entry.inc
 )
 
-qt_add_executable(PSVMS WIN32 psvms.cpp branding.qrc ${PSVMS_MODULES})
+qt_add_executable(PSVms WIN32 psvms.cpp branding.qrc ${PSVms_MODULES})
 
 # The implementation is now organized into subsystem modules. They are
 # included by psvms.cpp intentionally for this first safe refactor: several
 # legacy anonymous-namespace helpers are shared across sections. Moving them
 # into separate translation units will follow after explicit interfaces exist.
 
-target_link_libraries(PSVMS PRIVATE
+target_link_libraries(PSVms PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Multimedia
@@ -77,28 +77,28 @@ target_link_libraries(PSVMS PRIVATE
 )
 
 if(WIN32)
-    target_sources(PSVMS PRIVATE app_icon.rc)
-    target_link_libraries(PSVMS PRIVATE dwmapi psapi)
+    target_sources(PSVms PRIVATE app_icon.rc)
+    target_link_libraries(PSVms PRIVATE dwmapi psapi)
 
     # Embed the per-monitor DPI manifest through the MSVC linker.
     # Do not add RT_MANIFEST to app_icon.rc: LINK.exe already generates
     # an application manifest and CVTRES fails on duplicate RT_MANIFEST.
     if(MSVC)
-        target_link_options(PSVMS PRIVATE
+        target_link_options(PSVms PRIVATE
             "/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/psvms.manifest"
         )
     endif()
 endif()
 
-# All interface icons and branding artwork are embedded into PSVMS.exe
+# All interface icons and branding artwork are embedded into PSVms.exe
 # through branding.qrc (CMAKE_AUTORCC is enabled above).
 
 # Reduce optimizer memory use while legacy implementation sections share one translation unit.
 if(MSVC)
     # Diagnostic build: keep symbols and frame pointers so Windows crash dumps
     # can be resolved against the exact executable.
-    target_compile_options(PSVMS PRIVATE /Zi /Oy-)
-    target_link_options(PSVMS PRIVATE /DEBUG:FULL /INCREMENTAL:NO)
+    target_compile_options(PSVms PRIVATE /Zi /Oy-)
+    target_link_options(PSVms PRIVATE /DEBUG:FULL /INCREMENTAL:NO)
     # Keep the existing low-memory optimization for normal Release builds.
-    target_compile_options(PSVMS PRIVATE $<$<CONFIG:Release>:/O1>)
+    target_compile_options(PSVms PRIVATE $<$<CONFIG:Release>:/O1>)
 endif()

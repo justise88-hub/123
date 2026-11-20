@@ -1,4 +1,4 @@
-// PSVMS module: Диалоги, ввод данных и менеджер камер
+// PSVms module: Диалоги, ввод данных и менеджер камер
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -194,7 +194,7 @@ CameraDialog::CameraDialog(const CameraEntry &base, const QStringList &groups, Q
         QNetworkAccessManager manager;
         QNetworkRequest request(apiUrl);
         request.setTransferTimeout(5500);
-        request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("PSVMS/1.0"));
+        request.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("PSVms/1.0"));
         QNetworkReply *reply = manager.get(request);
         const QString user = streamUrl.userName(QUrl::FullyDecoded);
         const QString pass = streamUrl.password(QUrl::FullyDecoded);

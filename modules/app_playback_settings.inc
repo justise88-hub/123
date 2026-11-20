@@ -1,4 +1,4 @@
-// PSVMS module: Архив, PTZ, настройки, навигация и панели
+// PSVms module: Архив, PTZ, настройки, навигация и панели
 // This file is included by psvms.cpp to preserve the original single-TU build
 // while the code is being separated safely.
 
@@ -614,13 +614,13 @@ bool Cfg::autostartCameras()
 QString Cfg::videoDir()
 {
     return QSettings().value(QStringLiteral("storage/video"),
-                             documentsDir() + QStringLiteral("/PSVMS Archive")).toString();
+                             documentsDir() + QStringLiteral("/PSVms Archive")).toString();
 }
 
 QString Cfg::screenshotDir()
 {
     return QSettings().value(QStringLiteral("storage/screenshots"),
-                             documentsDir() + QStringLiteral("/PSVMS Screenshots")).toString();
+                             documentsDir() + QStringLiteral("/PSVms Screenshots")).toString();
 }
 
 // ======================================================================
@@ -782,7 +782,7 @@ private:
 
 } // namespace
 
-// Диалог встроенного ИИ-помощника PSVMS на базе Yandex AI Studio.
+// Диалог встроенного ИИ-помощника PSVms на базе Yandex AI Studio.
 class YandexAssistantDialog final : public QDialog {
 public:
     YandexAssistantDialog(const QString &apiKey, const QString &folderId, QWidget *parent = nullptr)
@@ -799,7 +799,7 @@ public:
             "background-repeat:no-repeat;border:1px solid #C99600;border-radius:6px;"
             "padding:12px;font-size:10pt;}"));
         m_input = new QLineEdit(this);
-        m_input->setPlaceholderText(T("Напишите вопрос о камерах, регистраторах или настройке PSVMS…"));
+        m_input->setPlaceholderText(T("Напишите вопрос о камерах, регистраторах или настройке PSVms…"));
         auto *send = new QPushButton(T("Отправить"), this);
         auto *close = new QPushButton(T("Закрыть"), this);
         close->setToolTip(T("Закрыть окно ИИ-помощника"));
@@ -818,7 +818,7 @@ public:
         connect(close, &QPushButton::clicked, this, &QDialog::close);
         connect(m_input, &QLineEdit::returnPressed, this, [this] { sendMessage(); });
         m_history.append(QJsonObject{{QStringLiteral("role"), QStringLiteral("system")},
-            {QStringLiteral("text"), QStringLiteral("Ты — технический помощник программы PSVMS для видеонаблюдения. Помогай диагностировать IP-камеры и видеорегистраторы, RTSP, ONVIF, TCP/UDP порты, сеть и настройки PSVMS. Давай пошаговые и безопасные инструкции. Не выдумывай точные порты конкретной модели, если модель неизвестна; проси уточнение. Предупреждай, что открытие портов в интернет повышает риск и предпочтительнее VPN. Отвечай по-русски, если пользователь пишет по-русски.")}});
+            {QStringLiteral("text"), QStringLiteral("Ты — технический помощник программы PSVms для видеонаблюдения. Помогай диагностировать IP-камеры и видеорегистраторы, RTSP, ONVIF, TCP/UDP порты, сеть и настройки PSVms. Давай пошаговые и безопасные инструкции. Не выдумывай точные порты конкретной модели, если модель неизвестна; проси уточнение. Предупреждай, что открытие портов в интернет повышает риск и предпочтительнее VPN. Отвечай по-русски, если пользователь пишет по-русски.")}});
         m_chat->append(QStringLiteral("<b>PSVms AI</b><br>%1").arg(T("Здравствуйте! Помогу с подключением камер, RTSP/ONVIF, портами и настройкой программы.")));
     }
 private:
@@ -883,7 +883,7 @@ void openYandexAssistant(QWidget *parent)
 {
     QSettings settings;
     if (!settings.value(QStringLiteral("ai/yandexEnabled"), false).toBool()) {
-        QMessageBox::information(parent, T("ИИ-помощник PSVMS"),
+        QMessageBox::information(parent, T("ИИ-помощник PSVms"),
             T("Сначала включите ИИ-помощника и укажите API-ключ и Folder ID в Настройки → ИИ-помощник."));
         return;
     }
@@ -1028,23 +1028,55 @@ QWidget *SettingsPage::buildGeneralTab()
         Q_UNUSED(key);
         return spin;
     };
+    auto *autoScreenScale = new QCheckBox(T("Автоподбор масштаба по экрану (1920×1080 компактнее, 3440×1440 — 100%)"), this);
+    autoScreenScale->setChecked(QSettings().value(QStringLiteral("ui/autoScreenScale"), true).toBool());
+
+    auto *fhdAutoScale = new QSpinBox(this);
+    fhdAutoScale->setRange(70, 125);
+    fhdAutoScale->setSingleStep(5);
+    fhdAutoScale->setSuffix(QStringLiteral("%"));
+    fhdAutoScale->setValue(qBound(70, QSettings().value(QStringLiteral("ui/fullHdAutoScalePercent"), 85).toInt(), 125));
+    fhdAutoScale->setEnabled(autoScreenScale->isChecked());
+    connect(autoScreenScale, &QCheckBox::toggled, fhdAutoScale, &QWidget::setEnabled);
+
+    form->addRow(T("Автомасштаб по разрешению"), autoScreenScale);
+    form->addRow(T("Масштаб для 1920×1080 (Авто)"), fhdAutoScale);
+
     auto *manualInterface = makePercentSpin(QStringLiteral("ui/manualInterfacePercent"), 100);
     auto *manualText = makePercentSpin(QStringLiteral("ui/manualTextPercent"), 100);
     auto *manualElements = makePercentSpin(QStringLiteral("ui/manualElementsPercent"), 100);
+    auto *leftPanelPct = new QSpinBox(this);
+    leftPanelPct->setRange(70, 140);
+    leftPanelPct->setSingleStep(5);
+    leftPanelPct->setSuffix(QStringLiteral("%"));
+    leftPanelPct->setValue(qBound(70, QSettings().value(QStringLiteral("ui/leftPanelWidthPercent"), 100).toInt(), 140));
+
+    auto *gridGapPct = new QSpinBox(this);
+    gridGapPct->setRange(25, 200);
+    gridGapPct->setSingleStep(25);
+    gridGapPct->setSuffix(QStringLiteral("%"));
+    gridGapPct->setValue(qBound(25, QSettings().value(QStringLiteral("ui/gridGapPercent"), 100).toInt(), 200));
+
     form->addRow(T("Ручной размер интерфейса (после перезапуска)"), manualInterface);
     form->addRow(T("Размер текста (после перезапуска)"), manualText);
     form->addRow(T("Размер кнопок и элементов (после перезапуска)"), manualElements);
+    form->addRow(T("Ширина левого меню камер (применяется сразу)"), leftPanelPct);
+    form->addRow(T("Отступы сетки камер (применяется сразу)"), gridGapPct);
 
     auto *resetScaling = new QPushButton(T("Вернуть масштабирование к стандартным настройкам"), this);
     resetScaling->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 12px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
-    resetScaling->setToolTip(T("Сбросить пресет, ручной масштаб, размер текста и элементов до 100%"));
+    resetScaling->setToolTip(T("Сбросить пресет, автоподбор, ручной масштаб, размер текста и элементов"));
     connect(resetScaling, &QPushButton::clicked, this,
-            [scale, manualInterface, manualText, manualElements]() {
+            [scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements]() {
         // Сброс пока меняет только значения в форме. Для записи нажмите «Применить изменения».
         scale->setCurrentIndex(0);
+        autoScreenScale->setChecked(true);
+        fhdAutoScale->setValue(85);
         manualInterface->setValue(100);
         manualText->setValue(100);
         manualElements->setValue(100);
+        leftPanelPct->setValue(100);
+        gridGapPct->setValue(100);
     });
     form->addRow(QString(), resetScaling);
 
@@ -1052,15 +1084,23 @@ QWidget *SettingsPage::buildGeneralTab()
     applyScaling->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
     applyScaling->setToolTip(T("Сохранить выбранные параметры масштабирования"));
     connect(applyScaling, &QPushButton::clicked, this,
-            [scale, manualInterface, manualText, manualElements]() {
+            [scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements]() {
         QSettings settings;
         settings.setValue(QStringLiteral("ui/scale"), scale->currentData().toDouble());
+        settings.setValue(QStringLiteral("ui/autoScreenScale"), autoScreenScale->isChecked());
+        settings.setValue(QStringLiteral("ui/fullHdAutoScalePercent"), fhdAutoScale->value());
         settings.setValue(QStringLiteral("ui/manualInterfacePercent"), manualInterface->value());
         settings.setValue(QStringLiteral("ui/manualTextPercent"), manualText->value());
         settings.setValue(QStringLiteral("ui/manualElementsPercent"), manualElements->value());
+        settings.setValue(QStringLiteral("ui/leftPanelWidthPercent"), leftPanelPct->value());
+        settings.setValue(QStringLiteral("ui/gridGapPercent"), gridGapPct->value());
         settings.sync();
+        if (QWidget *win = window()) {
+            if (auto *live = win->findChild<LiveViewPage *>())
+                live->applyLayoutMetricsNow();
+        }
         QMessageBox::information(nullptr, T("Масштабирование"),
-                                 T("Изменения сохранены. Новое масштабирование применится после перезапуска программы."));
+                                 T("Ширина левого меню и отступы сетки применены сразу. Общий масштаб интерфейса применится после перезапуска PSVms."));
     });
     form->addRow(QString(), applyScaling);
 
@@ -1079,8 +1119,8 @@ QWidget *SettingsPage::buildGeneralTab()
 
     auto *hotkeys = new QLabel(
         T("Горячие клавиши: F11 — во весь экран, F5 — обновить окна с камерами, "
-          "1 / 2 / 3 / 4 — раскладка 1, 2×2, 3×3, 4×4, Delete — закрыть выбранную камеру "
-          "(в разделе «Мониторинг»)."), this);
+          "1 / 2 / 3 / 4 — раскладка 1, 2×2, 3×3, 4×4, Ctrl+A — архив выбранной камеры, "
+          "Ctrl+S — подпоток для сетки, Delete — закрыть выбранную камеру (в разделе «Мониторинг»)."), this);
     hotkeys->setWordWrap(true);
     hotkeys->setStyleSheet(QStringLiteral("color:#8a8a8e; margin-top: 10px;"));
 
@@ -1312,7 +1352,7 @@ QWidget *SettingsPage::buildNetworkTab()
             auto *sock = new QUdpSocket(this);
             const QHostAddress ip(address);
             if (!ip.isNull()) {
-                const QByteArray probe("PSVMS-port-check");
+                const QByteArray probe("PSVms-port-check");
                 const qint64 sent = sock->writeDatagram(probe, ip, quint16(number));
                 result->setText(sent == probe.size()
                     ? T("UDP-пакет отправлен. Это НЕ подтверждает, что порт открыт: UDP не устанавливает соединение, а ответ зависит от службы устройства.")
@@ -1476,7 +1516,7 @@ QWidget *SettingsPage::buildUsersTab()
     note->setStyleSheet(QStringLiteral("color:#8a8a8e;"));
 
     auto *idleBox = new QGroupBox(T("Автоматическая блокировка"));
-    auto *idleEnabled = new QCheckBox(T("Блокировать PSVMS при бездействии"), idleBox);
+    auto *idleEnabled = new QCheckBox(T("Блокировать PSVms при бездействии"), idleBox);
     auto *idleMinutes = new QSpinBox(idleBox);
     idleMinutes->setRange(1, 240);
     idleMinutes->setSuffix(T(" мин."));
@@ -1501,6 +1541,398 @@ QWidget *SettingsPage::buildUsersTab()
     connect(idleEnabled, &QCheckBox::toggled, this, [saveIdle](bool) { saveIdle(); });
     connect(idleMinutes, qOverload<int>(&QSpinBox::valueChanged), this, [saveIdle](int) { saveIdle(); });
 
+    auto *vpnBox = new QGroupBox(T("Подключение через VPN"), this);
+    auto *vpnForm = new QFormLayout(vpnBox);
+
+    auto *vpnSavedCombo = new QComboBox(vpnBox);
+    auto *vpnSaveProfileBtn = new QPushButton(T("Сохранить профиль"), vpnBox);
+    auto *vpnDeleteProfileBtn = new QPushButton(T("Удалить"), vpnBox);
+    auto *vpnSavedRow = new QHBoxLayout;
+    vpnSavedRow->addWidget(vpnSavedCombo, 1);
+    vpnSavedRow->addWidget(vpnSaveProfileBtn);
+    vpnSavedRow->addWidget(vpnDeleteProfileBtn);
+
+    auto *vpnProfileEdit = new QLineEdit(vpnBox);
+    vpnProfileEdit->setPlaceholderText(T("Например: Office-Cameras-VPN"));
+    vpnProfileEdit->setText(QSettings().value(QStringLiteral("vpn/profileName")).toString());
+
+    auto *vpnModeCombo = new QComboBox(vpnBox);
+    vpnModeCombo->addItem(T("Системный профиль / RASVPN (Windows)"), QStringLiteral("rasvpn"));
+    vpnModeCombo->addItem(T("WireGuard (wg.exe / клиент)"), QStringLiteral("wireguard"));
+    vpnModeCombo->addItem(T("OpenVPN (openvpn.exe / клиент)"), QStringLiteral("openvpn"));
+    vpnModeCombo->addItem(T("Свой клиент / скрипт подключения"), QStringLiteral("custom"));
+    const QString savedMode = QSettings().value(QStringLiteral("vpn/mode"), QStringLiteral("rasvpn")).toString();
+    int modeIdx = vpnModeCombo->findData(savedMode);
+    if (modeIdx >= 0)
+        vpnModeCombo->setCurrentIndex(modeIdx);
+
+    auto *vpnTargetEdit = new QLineEdit(vpnBox);
+    vpnTargetEdit->setPlaceholderText(T("Имя подключения Windows или путь к .conf / .ovpn"));
+    vpnTargetEdit->setText(QSettings().value(QStringLiteral("vpn/target")).toString());
+
+    auto *vpnClientPathEdit = new QLineEdit(vpnBox);
+    vpnClientPathEdit->setPlaceholderText(T("Путь к .exe / .bat / .ps1 / .sh (если выбран свой клиент или путь вручную)"));
+    vpnClientPathEdit->setText(QSettings().value(QStringLiteral("vpn/clientPath")).toString());
+
+    auto *vpnBrowseBtn = new QPushButton(T("Обзор…"), vpnBox);
+    connect(vpnBrowseBtn, &QPushButton::clicked, this, [this, vpnClientPathEdit] {
+        const QString file = QFileDialog::getOpenFileName(
+            this,
+            T("Выберите клиент VPN или скрипт подключения"),
+            QString(),
+            T("Исполняемые и скриптовые файлы (*.exe *.bat *.cmd *.ps1 *.sh);;Все файлы (*)"));
+        if (!file.isEmpty()) {
+            vpnClientPathEdit->setText(file);
+            QSettings s;
+            s.setValue(QStringLiteral("vpn/clientPath"), file);
+            s.sync();
+        }
+    });
+
+    auto *vpnClientRow = new QHBoxLayout;
+    vpnClientRow->addWidget(vpnClientPathEdit, 1);
+    vpnClientRow->addWidget(vpnBrowseBtn);
+
+    auto *vpnScriptArgsEdit = new QLineEdit(vpnBox);
+    vpnScriptArgsEdit->setPlaceholderText(T("Аргументы запуска (опционально, например: --connect {target})"));
+    vpnScriptArgsEdit->setText(QSettings().value(QStringLiteral("vpn/scriptArgs")).toString());
+
+    auto *vpnDisconnectCmdEdit = new QLineEdit(vpnBox);
+    vpnDisconnectCmdEdit->setPlaceholderText(T("Команда/скрипт отключения (опционально, например: C:\vpn\down.bat)"));
+    vpnDisconnectCmdEdit->setText(QSettings().value(QStringLiteral("vpn/disconnectCommand")).toString());
+
+    auto *vpnProbeHostEdit = new QLineEdit(vpnBox);
+    vpnProbeHostEdit->setPlaceholderText(T("Хост/IP и порт проверки туннеля, например: 10.10.0.1:554 или 10.10.0.1"));
+    vpnProbeHostEdit->setText(QSettings().value(QStringLiteral("vpn/probeHost")).toString());
+
+    auto *vpnAutoConnect = new QCheckBox(T("Автоматически подключать VPN при запуске PSVms"), vpnBox);
+    vpnAutoConnect->setChecked(QSettings().value(QStringLiteral("vpn/autoConnect"), false).toBool());
+
+    auto *vpnAutoReconnect = new QCheckBox(T("Автопереподключать VPN при потере связи с удалённым хостом"), vpnBox);
+    vpnAutoReconnect->setChecked(QSettings().value(QStringLiteral("vpn/autoReconnect"), true).toBool());
+
+    auto *vpnStatusLabel = new QLabel(T("Статус: отключено"), vpnBox);
+    vpnStatusLabel->setStyleSheet(QStringLiteral("color:#A0A8B7;font-weight:600;"));
+
+    auto *vpnDiagLog = new QPlainTextEdit(vpnBox);
+    vpnDiagLog->setReadOnly(true);
+    vpnDiagLog->setMaximumHeight(90);
+    vpnDiagLog->setPlaceholderText(T("Журнал запуска клиента VPN, скриптов и проверки доступности…"));
+    vpnDiagLog->setPlainText(QSettings().value(QStringLiteral("vpn/diagLog")).toString());
+
+    auto *vpnConnectBtn = new QPushButton(T("Подключить VPN"), vpnBox);
+    auto *vpnDisconnectBtn = new QPushButton(T("Отключить VPN"), vpnBox);
+    vpnDisconnectBtn->setEnabled(false);
+    auto *vpnCheckBtn = new QPushButton(T("Проверить доступность"), vpnBox);
+
+    auto *vpnBtnRow = new QHBoxLayout;
+    vpnBtnRow->addWidget(vpnConnectBtn);
+    vpnBtnRow->addWidget(vpnDisconnectBtn);
+    vpnBtnRow->addWidget(vpnCheckBtn);
+    vpnBtnRow->addStretch(1);
+
+    vpnForm->addRow(T("Сохранённые профили:"), vpnSavedRow);
+    vpnForm->addRow(T("Профиль VPN:"), vpnProfileEdit);
+    vpnForm->addRow(T("Тип клиента:"), vpnModeCombo);
+    vpnForm->addRow(T("Подключение / конфиг:"), vpnTargetEdit);
+    vpnForm->addRow(T("Клиент или скрипт:"), vpnClientRow);
+    vpnForm->addRow(T("Аргументы запуска:"), vpnScriptArgsEdit);
+    vpnForm->addRow(T("Скрипт отключения:"), vpnDisconnectCmdEdit);
+    vpnForm->addRow(T("Хост проверки VPN:"), vpnProbeHostEdit);
+    vpnForm->addRow(QString(), vpnAutoConnect);
+    vpnForm->addRow(QString(), vpnAutoReconnect);
+    vpnForm->addRow(QString(), vpnBtnRow);
+    vpnForm->addRow(QString(), vpnStatusLabel);
+    vpnForm->addRow(T("Диагностика VPN:"), vpnDiagLog);
+
+    auto appendVpnDiag = [vpnDiagLog](const QString &line) {
+        const QString stamped = QDateTime::currentDateTime().toString(QStringLiteral("HH:mm:ss"))
+            + QStringLiteral(" — ") + line;
+        vpnDiagLog->appendPlainText(stamped);
+        const QString kept = vpnDiagLog->toPlainText().right(2000);
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/diagLog"), kept);
+        s.sync();
+    };
+
+    auto saveVpnPrefs = [vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnDisconnectCmdEdit, vpnProbeHostEdit, vpnAutoConnect, vpnAutoReconnect] {
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/profileName"), vpnProfileEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/mode"), vpnModeCombo->currentData().toString());
+        s.setValue(QStringLiteral("vpn/target"), vpnTargetEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/clientPath"), vpnClientPathEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/scriptArgs"), vpnScriptArgsEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/disconnectCommand"), vpnDisconnectCmdEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/probeHost"), vpnProbeHostEdit->text().trimmed());
+        s.setValue(QStringLiteral("vpn/autoConnect"), vpnAutoConnect->isChecked());
+        s.setValue(QStringLiteral("vpn/autoReconnect"), vpnAutoReconnect->isChecked());
+        s.sync();
+    };
+
+    auto reloadVpnProfilesCombo = [vpnSavedCombo, vpnProfileEdit] {
+        vpnSavedCombo->blockSignals(true);
+        vpnSavedCombo->clear();
+        QSettings s;
+        const QStringList names = s.value(QStringLiteral("vpn/profilesList")).toStringList();
+        const QString cur = vpnProfileEdit->text().trimmed();
+        for (const QString &n : names) {
+            if (!n.isEmpty())
+                vpnSavedCombo->addItem(n, n);
+        }
+        int idx = vpnSavedCombo->findData(cur);
+        if (idx >= 0)
+            vpnSavedCombo->setCurrentIndex(idx);
+        vpnSavedCombo->blockSignals(false);
+    };
+    reloadVpnProfilesCombo();
+
+    connect(vpnSaveProfileBtn, &QPushButton::clicked, this, [this, saveVpnPrefs, reloadVpnProfilesCombo, appendVpnDiag, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnDisconnectCmdEdit, vpnProbeHostEdit, vpnAutoConnect, vpnAutoReconnect] {
+        saveVpnPrefs();
+        const QString name = vpnProfileEdit->text().trimmed().isEmpty() ? T("PSVms-VPN") : vpnProfileEdit->text().trimmed();
+        vpnProfileEdit->setText(name);
+        QSettings s;
+        QStringList names = s.value(QStringLiteral("vpn/profilesList")).toStringList();
+        if (!names.contains(name))
+            names.append(name);
+        s.setValue(QStringLiteral("vpn/profilesList"), names);
+        const QString key = QStringLiteral("vpn/profiles/") + name + QLatin1Char('/');
+        s.setValue(key + QStringLiteral("mode"), vpnModeCombo->currentData().toString());
+        s.setValue(key + QStringLiteral("target"), vpnTargetEdit->text().trimmed());
+        s.setValue(key + QStringLiteral("clientPath"), vpnClientPathEdit->text().trimmed());
+        s.setValue(key + QStringLiteral("scriptArgs"), vpnScriptArgsEdit->text().trimmed());
+        s.setValue(key + QStringLiteral("disconnectCommand"), vpnDisconnectCmdEdit->text().trimmed());
+        s.setValue(key + QStringLiteral("probeHost"), vpnProbeHostEdit->text().trimmed());
+        s.setValue(key + QStringLiteral("autoConnect"), vpnAutoConnect->isChecked());
+        s.setValue(key + QStringLiteral("autoReconnect"), vpnAutoReconnect->isChecked());
+        s.sync();
+        reloadVpnProfilesCombo();
+        appendVpnDiag(T("Сохранён профиль VPN: %1").arg(name));
+    });
+
+    connect(vpnDeleteProfileBtn, &QPushButton::clicked, this, [this, reloadVpnProfilesCombo, appendVpnDiag, vpnSavedCombo, vpnProfileEdit] {
+        const QString name = vpnSavedCombo->currentData().toString().trimmed();
+        if (name.isEmpty())
+            return;
+        QSettings s;
+        QStringList names = s.value(QStringLiteral("vpn/profilesList")).toStringList();
+        names.removeAll(name);
+        s.setValue(QStringLiteral("vpn/profilesList"), names);
+        s.remove(QStringLiteral("vpn/profiles/") + name);
+        s.sync();
+        if (vpnProfileEdit->text().trimmed() == name)
+            vpnProfileEdit->clear();
+        reloadVpnProfilesCombo();
+        appendVpnDiag(T("Удалён профиль VPN: %1").arg(name));
+    });
+
+    connect(vpnSavedCombo, qOverload<int>(&QComboBox::activated), this, [this, saveVpnPrefs, appendVpnDiag, vpnSavedCombo, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnDisconnectCmdEdit, vpnProbeHostEdit, vpnAutoConnect, vpnAutoReconnect](int) {
+        const QString name = vpnSavedCombo->currentData().toString().trimmed();
+        if (name.isEmpty())
+            return;
+        QSettings s;
+        const QString key = QStringLiteral("vpn/profiles/") + name + QLatin1Char('/');
+        vpnProfileEdit->setText(name);
+        const QString m = s.value(key + QStringLiteral("mode"), QStringLiteral("rasvpn")).toString();
+        int idx = vpnModeCombo->findData(m);
+        if (idx >= 0)
+            vpnModeCombo->setCurrentIndex(idx);
+        vpnTargetEdit->setText(s.value(key + QStringLiteral("target")).toString());
+        vpnClientPathEdit->setText(s.value(key + QStringLiteral("clientPath")).toString());
+        vpnScriptArgsEdit->setText(s.value(key + QStringLiteral("scriptArgs")).toString());
+        vpnDisconnectCmdEdit->setText(s.value(key + QStringLiteral("disconnectCommand")).toString());
+        vpnProbeHostEdit->setText(s.value(key + QStringLiteral("probeHost")).toString());
+        vpnAutoConnect->setChecked(s.value(key + QStringLiteral("autoConnect"), false).toBool());
+        vpnAutoReconnect->setChecked(s.value(key + QStringLiteral("autoReconnect"), true).toBool());
+        saveVpnPrefs();
+        appendVpnDiag(T("Выбран профиль VPN: %1").arg(name));
+    });
+
+    auto probeVpnReachability = [vpnProbeHostEdit, appendVpnDiag](bool quiet) -> bool {
+        QString spec = vpnProbeHostEdit->text().trimmed();
+        if (spec.isEmpty())
+            spec = QSettings().value(QStringLiteral("vpn/probeHost")).toString().trimmed();
+        if (spec.isEmpty()) {
+            if (!quiet)
+                appendVpnDiag(T("Проверка хоста пропущена: адрес VPN-шлюза/камеры не указан."));
+            return true;
+        }
+        QString host = spec;
+        quint16 port = 554;
+        const int colon = spec.lastIndexOf(QLatin1Char(':'));
+        if (colon > 0 && spec.indexOf(QLatin1Char(']')) < colon) {
+            bool okPort = false;
+            const int p = spec.mid(colon + 1).toInt(&okPort);
+            if (okPort && p > 0 && p <= 65535) {
+                host = spec.left(colon).trimmed();
+                port = static_cast<quint16>(p);
+            }
+        }
+        QTcpSocket sock;
+        sock.connectToHost(host, port);
+        const bool ok = sock.waitForConnected(1200);
+        sock.abort();
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/reachable"), ok);
+        s.sync();
+        if (!quiet) {
+            appendVpnDiag(ok
+                ? T("Доступность %1:%2 — ОК (туннель отвечает)").arg(host).arg(port)
+                : T("Доступность %1:%2 — нет ответа").arg(host).arg(port));
+        }
+        return ok;
+    };
+
+    connect(vpnCheckBtn, &QPushButton::clicked, this, [this, vpnProbeHostEdit, probeVpnReachability] {
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/probeHost"), vpnProbeHostEdit->text().trimmed());
+        s.sync();
+        const bool ok = probeVpnReachability(false);
+        if (QWidget *win = window()) {
+            if (auto *mw = qobject_cast<QMainWindow *>(win))
+                mw->statusBar()->showMessage(ok ? T("VPN-хост доступен") : T("VPN-хост недоступен"), 4000);
+        }
+    });
+
+    connect(vpnProfileEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnProbeHostEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnTargetEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnClientPathEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnScriptArgsEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnDisconnectCmdEdit, &QLineEdit::editingFinished, this, saveVpnPrefs);
+    connect(vpnModeCombo, qOverload<int>(&QComboBox::activated), this, [saveVpnPrefs](int) { saveVpnPrefs(); });
+    connect(vpnAutoConnect, &QCheckBox::toggled, this, [saveVpnPrefs](bool) { saveVpnPrefs(); });
+    connect(vpnAutoReconnect, &QCheckBox::toggled, this, [saveVpnPrefs](bool) { saveVpnPrefs(); });
+
+    connect(vpnConnectBtn, &QPushButton::clicked, this, [this, saveVpnPrefs, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
+        if (!Users::current().isAdmin()) {
+            SecurityAudit::write(QStringLiteral("permission_denied"), QStringLiteral("vpn.connect"));
+            QMessageBox::warning(this, T("VPN"), T("Недостаточно прав: управление VPN доступно администратору."));
+            return;
+        }
+        saveVpnPrefs();
+        const QString prof = vpnProfileEdit->text().trimmed().isEmpty() ? T("PSVms-VPN") : vpnProfileEdit->text().trimmed();
+        const QString mode = vpnModeCombo->currentData().toString();
+        const QString target = vpnTargetEdit->text().trimmed();
+        const QString clientPath = vpnClientPathEdit->text().trimmed();
+        const QString rawArgs = vpnScriptArgsEdit->text().trimmed();
+        if (target.isEmpty() && clientPath.isEmpty()) {
+            QMessageBox::warning(this, T("VPN"), T("Укажите имя подключения/конфиг или выберите исполняемый файл клиента / скрипт."));
+            return;
+        }
+        bool ok = true;
+        if (!clientPath.isEmpty()) {
+            QStringList args = QProcess::splitCommand(rawArgs);
+            for (QString &a : args) {
+                a.replace(QStringLiteral("{target}"), target);
+                a.replace(QStringLiteral("{profile}"), prof);
+            }
+            if (args.isEmpty() && !target.isEmpty()) {
+                if (mode == QLatin1String("openvpn"))
+                    args << QStringLiteral("--config") << target;
+                else if (mode == QLatin1String("wireguard"))
+                    args << QStringLiteral("/installtunnelservice") << target;
+                else
+                    args << target;
+            }
+            ok = QProcess::startDetached(clientPath, args);
+        } else {
+#ifdef Q_OS_WIN
+            ok = false;
+            if (mode == QLatin1String("rasvpn")) {
+                ok = QProcess::startDetached(QStringLiteral("rasdial.exe"), {target});
+            } else if (mode == QLatin1String("wireguard")) {
+                ok = QProcess::startDetached(QStringLiteral("wireguard.exe"), {QStringLiteral("/installtunnelservice"), target});
+            } else if (mode == QLatin1String("openvpn")) {
+                ok = QProcess::startDetached(QStringLiteral("openvpn.exe"), {QStringLiteral("--config"), target});
+            }
+#endif
+        }
+        if (!ok) {
+            appendVpnDiag(T("Ошибка запуска клиента/скрипта (%1) для профиля %2").arg(clientPath.isEmpty() ? mode : clientPath, prof));
+            SecurityAudit::write(QStringLiteral("vpn_connect_failed"), prof + QLatin1Char('/') + mode);
+            QMessageBox::warning(this, T("VPN"), T("Не удалось запустить клиент VPN или скрипт (%1). Проверьте путь и параметры.").arg(clientPath.isEmpty() ? mode : clientPath));
+            return;
+        }
+        appendVpnDiag(T("Запущен клиент/скрипт (%1) для профиля %2").arg(clientPath.isEmpty() ? mode : clientPath, prof));
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/active"), true);
+        s.setValue(QStringLiteral("vpn/reachable"), true);
+        s.sync();
+        if (QWidget *win = window()) {
+            if (auto *lbl = win->findChild<QLabel *>(QStringLiteral("vpnStatusBarLabel"))) {
+                lbl->setText(T("VPN: %1").arg(prof));
+                lbl->setStyleSheet(QStringLiteral("color:#34C759;font-weight:700;padding:0 8px;"));
+            }
+            if (auto *mw = qobject_cast<QMainWindow *>(win))
+                mw->statusBar()->showMessage(T("VPN подключён: %1").arg(prof), 5000);
+        }
+        vpnStatusLabel->setText(T("Статус: подключено (%1)").arg(prof));
+        vpnStatusLabel->setStyleSheet(QStringLiteral("color:#34C759;font-weight:700;"));
+        vpnConnectBtn->setEnabled(false);
+        vpnDisconnectBtn->setEnabled(true);
+        SecurityAudit::write(QStringLiteral("vpn_connected"), prof + QLatin1Char('/') + mode);
+    });
+
+    connect(vpnDisconnectBtn, &QPushButton::clicked, this, [this, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnDisconnectCmdEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
+        if (!Users::current().isAdmin()) {
+            SecurityAudit::write(QStringLiteral("permission_denied"), QStringLiteral("vpn.disconnect"));
+            QMessageBox::warning(this, T("VPN"), T("Недостаточно прав: управление VPN доступно администратору."));
+            return;
+        }
+        const QString prof = vpnProfileEdit->text().trimmed().isEmpty() ? T("PSVms-VPN") : vpnProfileEdit->text().trimmed();
+        const QString mode = vpnModeCombo->currentData().toString();
+        const QString target = vpnTargetEdit->text().trimmed();
+        const QString clientPath = vpnClientPathEdit->text().trimmed();
+        const QString discCmd = vpnDisconnectCmdEdit->text().trimmed();
+        if (!discCmd.isEmpty()) {
+            QStringList dArgs = QProcess::splitCommand(discCmd);
+            if (!dArgs.isEmpty()) {
+                const QString prog = dArgs.takeFirst();
+                for (QString &a : dArgs) {
+                    a.replace(QStringLiteral("{target}"), target);
+                    a.replace(QStringLiteral("{profile}"), prof);
+                }
+                QProcess::startDetached(prog, dArgs);
+            }
+        } else {
+#ifdef Q_OS_WIN
+            if (mode == QLatin1String("rasvpn") && !target.isEmpty()) {
+                QProcess::startDetached(QStringLiteral("rasdial.exe"), {target, QStringLiteral("/disconnect")});
+            } else if (mode == QLatin1String("wireguard") && !target.isEmpty()) {
+                QProcess::startDetached(QStringLiteral("wireguard.exe"), {QStringLiteral("/uninstalltunnelservice"), target});
+            } else if (mode == QLatin1String("custom") && !clientPath.isEmpty()) {
+                QProcess::startDetached(clientPath, {QStringLiteral("--disconnect")});
+            }
+#endif
+        }
+        appendVpnDiag(T("Отключён профиль VPN: %1 (%2)").arg(prof, mode));
+        QSettings s;
+        s.setValue(QStringLiteral("vpn/active"), false);
+        s.setValue(QStringLiteral("vpn/reachable"), false);
+        s.sync();
+        if (QWidget *win = window()) {
+            if (auto *lbl = win->findChild<QLabel *>(QStringLiteral("vpnStatusBarLabel"))) {
+                lbl->setText(T("VPN: выкл"));
+                lbl->setStyleSheet(QStringLiteral("color:#9AA3B2;font-weight:600;padding:0 8px;"));
+            }
+            if (auto *mw = qobject_cast<QMainWindow *>(win))
+                mw->statusBar()->showMessage(T("VPN отключён"), 4000);
+        }
+        vpnStatusLabel->setText(T("Статус: отключено"));
+        vpnStatusLabel->setStyleSheet(QStringLiteral("color:#A0A8B7;font-weight:600;"));
+        vpnConnectBtn->setEnabled(true);
+        vpnDisconnectBtn->setEnabled(false);
+        SecurityAudit::write(QStringLiteral("vpn_disconnected"), prof + QLatin1Char('/') + mode);
+    });
+
+    if (QSettings().value(QStringLiteral("vpn/active"), false).toBool()) {
+        const QString prof = vpnProfileEdit->text().trimmed().isEmpty() ? T("PSVms-VPN") : vpnProfileEdit->text().trimmed();
+        vpnStatusLabel->setText(T("Статус: активен профиль %1").arg(prof));
+        vpnStatusLabel->setStyleSheet(QStringLiteral("color:#34C759;font-weight:700;"));
+        vpnConnectBtn->setEnabled(false);
+        vpnDisconnectBtn->setEnabled(true);
+    }
+
     auto *switchRow = new QHBoxLayout;
     auto *switchLabel = new QLabel(T("Текущая учётная запись в сеансе: <b>%1</b>")
         .arg(Users::current().name.isEmpty() ? T("не выбран") : Users::current().name), this);
@@ -1523,6 +1955,7 @@ QWidget *SettingsPage::buildUsersTab()
     auto *lay = new QVBoxLayout;
     lay->addLayout(switchRow);
     lay->addWidget(idleBox);
+    lay->addWidget(vpnBox);
     lay->addLayout(buttons);
     lay->addWidget(m_users, 1);
     lay->addWidget(note);
@@ -1671,7 +2104,7 @@ QWidget *SettingsPage::buildBackupTab()
 
     connect(exportBtn, &QPushButton::clicked, this, [this] {
         const QString def = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-                            + QStringLiteral("/PSVMS-backup.json");
+                            + QStringLiteral("/PSVms-backup.json");
         const QString path = QFileDialog::getSaveFileName(this, T("Резервная копия"), def, QStringLiteral("JSON (*.json)"));
         if (path.isEmpty())
             return;
@@ -1734,11 +2167,11 @@ QWidget *SettingsPage::buildLicenseTab()
         const bool developerAccess = Users::current().isDeveloper();
         const bool active = psvmsLicenseActive(&status, &expiry);
         if (developerAccess) {
-            editionTitle->setText(T("PSVMS — Pro (режим разработчика)"));
+            editionTitle->setText(T("PSVms — Pro (режим разработчика)"));
             editionTitle->setStyleSheet(QStringLiteral("font-size:10pt;font-weight:900;color:#F5B700;"));
             editionStatus->setText(T("Полный функционал доступен для учётной записи разработчика. Коммерческая лицензия не изменена."));
         } else {
-            editionTitle->setText(active ? T("PSVMS — полная Pro-версия") : T("PSVMS — DEMO ВЕРСИЯ"));
+            editionTitle->setText(active ? T("PSVms — полная Pro-версия") : T("PSVms — DEMO ВЕРСИЯ"));
             editionTitle->setStyleSheet(active
                 ? QStringLiteral("font-size:10pt;font-weight:900;color:#63e6ee;")
                 : QStringLiteral("font-size:10pt;font-weight:900;color:#ff4548;letter-spacing:0.5px;"));
@@ -1759,8 +2192,8 @@ QWidget *SettingsPage::buildLicenseTab()
         QMessageBox::information(this, T("ID компьютера"), T("ID компьютера скопирован. Отправьте его для выпуска лицензии."));
     });
     connect(activateBtn, &QPushButton::clicked, this, [this, refresh] {
-        const QString path = QFileDialog::getOpenFileName(this, T("Выберите файл лицензии PSVMS"),
-                                                          QString(), T("Лицензии PSVMS (*.lic);;Все файлы (*.*)"));
+        const QString path = QFileDialog::getOpenFileName(this, T("Выберите файл лицензии PSVms"),
+                                                          QString(), T("Лицензии PSVms (*.lic);;Все файлы (*.*)"));
         if (path.isEmpty()) return;
         QString error;
         if (!psvmsImportLicense(path, &error)) {
@@ -1769,7 +2202,7 @@ QWidget *SettingsPage::buildLicenseTab()
         }
         refresh();
         QMessageBox::information(this, T("Лицензия активирована"),
-                                 T("Подпись проверена. Полная версия PSVMS активирована на этом компьютере."));
+                                 T("Подпись проверена. Полная версия PSVms активирована на этом компьютере."));
         if (auto *tabs = findChild<QTabWidget *>()) {
             for (int i = 1; i <= 4; ++i) tabs->setTabEnabled(i, true);
         }
@@ -1843,7 +2276,7 @@ namespace {
 constexpr int kNavExpandedWidth = 255;
 constexpr int kNavCollapsedWidth = 68;
 
-// Векторные значки ячеек: единая тонкая голубая неоновая графика PSVMS.
+// Векторные значки ячеек: единая тонкая голубая неоновая графика PSVms.
 QIcon makeCellIcon(const QString &kind, const QColor &color)
 {
     QPixmap pm(64, 64);
@@ -1900,7 +2333,7 @@ QIcon makeCellIcon(const QString &kind, const QColor &color)
 }
 
 // Большая эмблема пустой ячейки рисуется векторно: не зависит от внешних PNG,
-// сохраняет чёткость при любом размере и использует полупрозрачный голубой неон PSVMS.
+// сохраняет чёткость при любом размере и использует полупрозрачный голубой неон PSVms.
 QPixmap makeCameraCellArtwork(const QSize &requestedSize)
 {
     const QSize size(qMax(1, requestedSize.width()), qMax(1, requestedSize.height()));
@@ -1993,14 +2426,14 @@ QIcon makeAvatarIcon(const QString &name)
 
 } // namespace
 
-// Фоновое изображение PSVMS встроено прямо в исходник, поэтому отдельный .qrc/файл не нужен.
+// Фоновое изображение PSVms встроено прямо в исходник, поэтому отдельный .qrc/файл не нужен.
 static QPixmap makePsvmsBrandWallpaper()
 {
     static const QPixmap wallpaper = [] {
         QPixmap pm;
         const QString imagePath = QStringLiteral(":/branding/wallpaper.jpg");
         if (!pm.load(imagePath, "JPG")) {
-            qWarning() << "PSVMS embedded wallpaper could not be loaded:" << imagePath;
+            qWarning() << "PSVms embedded wallpaper could not be loaded:" << imagePath;
         }
         return pm;
     }();
@@ -2733,15 +3166,15 @@ bool SideNav::eventFilter(QObject *obj, QEvent *e)
 static QPixmap psvmsSplashPixmap()
 {
     // Splash artwork is shipped in assets/ to keep large binary data out of the C++ translation unit.
-    qInfo() << "PSVMS splash: pixmap load entered";
+    qInfo() << "PSVms splash: pixmap load entered";
     QPixmap source;
     const QString imagePath = QStringLiteral(":/branding/splash.png");
-    qInfo() << "PSVMS splash: loading embedded image" << imagePath;
+    qInfo() << "PSVms splash: loading embedded image" << imagePath;
     const bool loaded = source.load(imagePath, "PNG");
-    qInfo() << "PSVMS splash: image load finished" << loaded
+    qInfo() << "PSVms splash: image load finished" << loaded
             << "size" << source.size();
     if (source.isNull()) {
-        qWarning() << "PSVMS splash image could not be loaded:" << imagePath;
+        qWarning() << "PSVms splash image could not be loaded:" << imagePath;
         QPixmap fallback(1200, 675);
         fallback.fill(QColor("#0D0F12"));
         QPainter painter(&fallback);
@@ -2750,10 +3183,10 @@ static QPixmap psvmsSplashPixmap()
         painter.drawText(fallback.rect(), Qt::AlignCenter, QStringLiteral("PSVms"));
         return fallback;
     }
-    qInfo() << "PSVMS splash: scaling image entered";
+    qInfo() << "PSVms splash: scaling image entered";
     QPixmap result = source.scaled(QSize(1200, 675), Qt::KeepAspectRatioByExpanding,
                                    Qt::SmoothTransformation);
-    qInfo() << "PSVMS splash: scaling image finished" << result.size();
+    qInfo() << "PSVms splash: scaling image finished" << result.size();
     return result;
 }
 
@@ -2764,7 +3197,7 @@ public:
         : QSplashScreen(psvmsSplashPixmap(),
                         Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint)
     {
-        qInfo() << "PSVMS splash: AnimatedSplash constructor entered";
+        qInfo() << "PSVms splash: AnimatedSplash constructor entered";
         setFixedSize(pixmap().size());
         setWindowTitle(QStringLiteral("PSVms"));
         m_timer = new QTimer(this);
@@ -2775,7 +3208,7 @@ public:
         });
         // Заставка всегда анимирована независимо от режима интерфейса.
         m_timer->start();
-        qInfo() << "PSVMS splash: AnimatedSplash constructor finished; animation="
+        qInfo() << "PSVms splash: AnimatedSplash constructor finished; animation="
                 << Cfg::view().animations;
     }
 
@@ -2785,27 +3218,104 @@ protected:
         QSplashScreen::paintEvent(event);
         QPainter p(this);
         p.setRenderHint(QPainter::Antialiasing, true);
-        const qreal pulse = 0.5 + 0.5 * std::sin(m_phase * 6.283185307179586);
-        const QPointF center(width() / 2.0, 235.0);
 
-        p.setPen(QPen(QColor(245, 183, 0, 55 + int(95 * pulse)), 2.0));
-        p.setBrush(Qt::NoBrush);
-        p.drawEllipse(center, 100.0 + 6.0 * pulse, 100.0 + 6.0 * pulse);
+        const qreal w = qreal(width());
+        const qreal h = qreal(height());
+        const qreal twoPi = 6.283185307179586;
+        const qreal pulse = 0.5 + 0.5 * std::sin(m_phase * twoPi);
 
-        const QRectF track(350, 444, 500, 5);
+        // Тонкая сетка видеостены поверх заставки для атмосферы систем безопасности
+        p.save();
+        p.setPen(QPen(QColor(68, 86, 114, 34), 1.0));
+        const int cols = 8;
+        const int rows = 5;
+        for (int c = 1; c < cols; ++c) {
+            const qreal x = (w * c) / cols;
+            p.drawLine(QPointF(x, 0.0), QPointF(x, h));
+        }
+        for (int r = 1; r < rows; ++r) {
+            const qreal y = (h * r) / rows;
+            p.drawLine(QPointF(0.0, y), QPointF(w, y));
+        }
+        p.restore();
+
+        // Угловые видоискатели/рамки камеры безопасности по краям заставки
+        const qreal m = 24.0;
+        const qreal arm = 22.0;
+        p.setPen(QPen(QColor(245, 183, 0, 155 + int(65 * pulse)), 2.0));
+        const QPointF corners[4] = {
+            QPointF(m, m), QPointF(w - m, m),
+            QPointF(m, h - m), QPointF(w - m, h - m)
+        };
+        const qreal sx[4] = {1.0, -1.0, 1.0, -1.0};
+        const qreal sy[4] = {1.0, 1.0, -1.0, -1.0};
+        for (int i = 0; i < 4; ++i) {
+            p.drawLine(corners[i], QPointF(corners[i].x() + sx[i] * arm, corners[i].y()));
+            p.drawLine(corners[i], QPointF(corners[i].x(), corners[i].y() + sy[i] * arm));
+        }
+
+        // Индикатор REC в верхнем левом углу
+        const qreal recAlpha = 135.0 + 115.0 * std::sin(m_phase * twoPi * 2.0);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor(52, 60, 74, 220));
-        p.drawRoundedRect(track, 2.5, 2.5);
+        p.setBrush(QColor(229, 57, 53, int(qBound(40.0, recAlpha, 250.0))));
+        p.drawEllipse(QPointF(m + 36.0, m + 11.0), 5.5, 5.5);
+        p.setPen(QColor(236, 240, 245, 225));
+        p.setFont(QFont(QStringLiteral("Segoe UI"), 9, QFont::Bold));
+        p.drawText(QRectF(m + 48.0, m + 1.0, 150.0, 20.0), Qt::AlignLeft | Qt::AlignVCenter,
+                   QStringLiteral("REC • SECURE VMS"));
 
-        const qreal barW = 150.0;
+        // Радарный сектор и контуры объектива вокруг центра заставки
+        const QPointF center(w / 2.0, 235.0);
+        const qreal radius = 96.0;
+        p.setPen(QPen(QColor(245, 183, 0, 60 + int(85 * pulse)), 1.6));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(center, radius + 8.0 * pulse, radius + 8.0 * pulse);
+        p.drawEllipse(center, radius * 0.66, radius * 0.66);
+
+        const qreal sweepAngleDeg = m_phase * 360.0;
+        QConicalGradient sweep(center, -sweepAngleDeg);
+        sweep.setColorAt(0.0, QColor(245, 183, 0, 125));
+        sweep.setColorAt(0.18, QColor(245, 183, 0, 32));
+        sweep.setColorAt(0.22, QColor(245, 183, 0, 0));
+        sweep.setColorAt(1.0, QColor(245, 183, 0, 0));
+        p.setPen(Qt::NoPen);
+        p.setBrush(sweep);
+        p.drawPie(QRectF(center.x() - radius, center.y() - radius, radius * 2.0, radius * 2.0),
+                  int(-sweepAngleDeg * 16.0), -64 * 16);
+
+        // Горизонтальная сканирующая линия
+        const qreal scanY = 56.0 + m_phase * (h - 112.0);
+        QLinearGradient scanGrad(0.0, scanY - 10.0, 0.0, scanY + 10.0);
+        scanGrad.setColorAt(0.0, QColor(245, 183, 0, 0));
+        scanGrad.setColorAt(0.5, QColor(245, 183, 0, 75));
+        scanGrad.setColorAt(1.0, QColor(245, 183, 0, 0));
+        p.fillRect(QRectF(m, scanY - 10.0, w - 2.0 * m, 20.0), scanGrad);
+
+        // Шкала прогресса и статус инициализации модулей безопасности/видеонаблюдения
+        const QRectF track(330.0, 442.0, 540.0, 6.0);
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(34, 42, 54, 230));
+        p.drawRoundedRect(track, 3.0, 3.0);
+
+        const qreal barW = 165.0;
         const qreal barX = track.left() + m_phase * (track.width() - barW);
-        p.setBrush(QColor(245, 183, 0, 240));
-        p.drawRoundedRect(QRectF(barX, track.top(), barW, track.height()), 2.5, 2.5);
+        p.setBrush(QColor(245, 183, 0, 245));
+        p.drawRoundedRect(QRectF(barX, track.top(), barW, track.height()), 3.0, 3.0);
 
-        p.setPen(QColor(236, 240, 245, 235));
+        const QString stageText = (m_phase < 0.33)
+            ? T("PSVms  •  ПРОВЕРКА ЗАЩИТЫ, СЕТИ И VPN-ТУННЕЛЕЙ")
+            : ((m_phase < 0.67)
+                ? T("PSVms  •  ИНИЦИАЛИЗАЦИЯ ВИДЕОПОТОКОВ RTSP / ONVIF / ISAPI")
+                : T("PSVms  •  ПОДГОТОВКА ВИДЕОСТЕНЫ И АРХИВА ЗАПИСЕЙ"));
+
+        p.setPen(QColor(236, 240, 245, 240));
         p.setFont(QFont(QStringLiteral("Segoe UI"), 10, QFont::DemiBold));
-        p.drawText(QRect(260, 496, width() - 520, 30), Qt::AlignCenter,
-                   T("PSVms  •  ЗАГРУЗКА СИСТЕМЫ И МОДУЛЕЙ ВИДЕОНАБЛЮДЕНИЯ"));
+        p.drawText(QRectF(180.0, 462.0, w - 360.0, 28.0), Qt::AlignCenter, stageText);
+
+        p.setPen(QColor(156, 168, 186, 210));
+        p.setFont(QFont(QStringLiteral("Segoe UI"), 8, QFont::Normal));
+        p.drawText(QRectF(180.0, 492.0, w - 360.0, 22.0), Qt::AlignCenter,
+                   T("SECURITY SURVEILLANCE PLATFORM  •  CONTROL & MONITORING"));
     }
 
 private:
@@ -2815,22 +3325,22 @@ private:
 
 QSplashScreen *createSplash()
 {
-    qInfo() << "PSVMS splash: createSplash entered";
+    qInfo() << "PSVms splash: createSplash entered";
     auto *splash = new AnimatedSplash;
     // Заставка не является главным окном приложения. Её закрытие не должно
     // инициировать QApplication::quit() до показа окна входа.
     splash->setAttribute(Qt::WA_QuitOnClose, false);
-    qInfo() << "PSVMS splash: before show";
+    qInfo() << "PSVms splash: before show";
     splash->show();
-    qInfo() << "PSVMS splash: after show; before processEvents";
+    qInfo() << "PSVms splash: after show; before processEvents";
     QCoreApplication::processEvents();
-    qInfo() << "PSVMS splash: createSplash finished";
+    qInfo() << "PSVms splash: createSplash finished";
     return splash;
 }
 
 void finishSplash(QSplashScreen *splash)
 {
-    qInfo() << "PSVMS splash: finishSplash entered";
+    qInfo() << "PSVms splash: finishSplash entered";
     if (!splash)
         return;
     {
@@ -2841,14 +3351,14 @@ void finishSplash(QSplashScreen *splash)
         anim->setEndValue(0.0);
         QObject::connect(anim, &QPropertyAnimation::finished, &loop, &QEventLoop::quit);
         anim->start();
-        qInfo() << "PSVMS splash: fade animation started (mode-independent)";
+        qInfo() << "PSVms splash: fade animation started (mode-independent)";
         loop.exec();
-        qInfo() << "PSVMS splash: fade animation finished";
+        qInfo() << "PSVms splash: fade animation finished";
     }
     splash->close();
-    qInfo() << "PSVMS splash: splash closed; deleting";
+    qInfo() << "PSVms splash: splash closed; deleting";
     delete splash;
-    qInfo() << "PSVMS splash: finishSplash completed";
+    qInfo() << "PSVms splash: finishSplash completed";
 }
 
 // ======================================================================
