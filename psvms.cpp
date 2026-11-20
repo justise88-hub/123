@@ -1412,6 +1412,10 @@ public:
     void openArchiveForSelectedCamera();
     void exportArchiveIntervalForCamera(const QString &cameraId, qint64 fromMs, qint64 toMs);
     void applyLayoutMetricsNow();
+    bool isPanelVisible() const { return m_leftPanel && m_leftPanel->isVisible(); }
+
+public slots:
+    void setPanelVisible(bool on);
 
 signals:
     void addCameraRequested();
@@ -1421,7 +1425,6 @@ private slots:
     void rebuildTree();
     void refreshStates();
     void applyFilter(const QString &text);
-    void setPanelVisible(bool on);
 
 private:
     void openArchive(const QString &cameraId);
@@ -2493,6 +2496,7 @@ public:
                    bool showTime, int brightness, bool audio, bool fillCell = false);
     void setViewOptions(const QString &title, bool showTime, int brightness);
     void setFillCell(bool on);
+    void restart();
     void startPlayback();
     void stopPlayback();                 // остановить показ: ячейка остаётся за камерой, показывается «▶»
     void clear(bool notify = true);
@@ -3000,6 +3004,17 @@ bool canCurrentUserPerformAction(const QString &actionKey);
 // существующих внутренних функций и анонимных namespace без риска ODR.
 // Следующий этап — вынос модулей в отдельные .cpp/.h с явными интерфейсами.
 // ======================================================================
+struct PsvmsLayoutPreset {
+    QString name;
+    int count = 4;
+    QStringList cells;
+    int quality = 0;
+    bool patrol = false;
+    int patrolSec = 10;
+    QString hotkey;
+};
+QList<PsvmsLayoutPreset> readPsvmsLayoutPresets();
+
 #include "modules/app_dialogs.inc"
 #include "modules/app_pages.inc"
 #include "modules/app_shell.inc"

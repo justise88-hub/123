@@ -1101,19 +1101,7 @@ QList<GridLayoutDef> VideoGrid::layouts()
     return {{1, 1}, {4, 2}, {6, 3}, {8, 4}, {9, 3}, {12, 4}, {16, 4}, {20, 5}, {25, 5}, {36, 6}, {49, 7}, {64, 8}};
 }
 
-namespace {
-
-struct PsvmsLayoutPreset {
-    QString name;
-    int count = 4;
-    QStringList cells;
-    int quality = 0;
-    bool patrol = false;
-    int patrolSec = 10;
-    QString hotkey;
-};
-
-[[maybe_unused]] QList<PsvmsLayoutPreset> readPsvmsLayoutPresets()
+QList<PsvmsLayoutPreset> readPsvmsLayoutPresets()
 {
     QList<PsvmsLayoutPreset> out;
     QSettings s;
@@ -1153,8 +1141,6 @@ struct PsvmsLayoutPreset {
     s.endArray();
     s.sync();
 }
-
-} // namespace
 
 QString VideoGrid::layoutLabel(int count)
 {
@@ -1952,9 +1938,10 @@ void VideoGrid::showCellMenu(VideoCell *cell, const QPoint &globalPos)
     });
     addGridAction(&menu, T("Копировать имя и IP камеры"), this, [this, id] {
         if (const CameraEntry *e = m_mgr->find(id)) {
-            const QString info = e->ip.isEmpty()
+            const QString host = QUrl(e->url).host();
+            const QString info = host.isEmpty()
                 ? e->name
-                : QStringLiteral("%1 (%2)").arg(e->name, e->ip);
+                : QStringLiteral("%1 (%2)").arg(e->name, host);
             if (QClipboard *cb = QGuiApplication::clipboard())
                 cb->setText(info);
             emit message(T("Скопировано в буфер: %1").arg(info));

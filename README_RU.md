@@ -316,3 +316,10 @@
 - В заголовке контекстного меню ячейки (`modules/video.inc`) добавлена телеметрия активного потока (`Main`/`Sub`) и состояния/RTT VPN.
 - В `modules/app_shell.inc` добавлены обязательная проверка учётной записи с паролем при снятии блокировки (`security/unlockRequired`), автопауза сетки при уходе со страницы «Мониторинг» и регистрация горячих клавиш для пользовательских пресетов.
 - Встроенный пароль и хэш учётной записи «Разработчик» сохранены без изменений.
+
+## Исправление ошибок компиляции MSVC / GitHub Actions (v61)
+- Устранены обращения к несуществующему полю `CameraEntry::ip` в `modules/app_pages.inc` и `modules/video.inc` (используется `QUrl(url).host()`).
+- Открыт доступ к `VideoCell::restart()`, `LiveViewPage::isPanelVisible()` / `setPanelVisible()` и объявлениям `PsvmsLayoutPreset` / `readPsvmsLayoutPresets()` в `psvms.cpp`.
+- Исправлены порядок создания `vpnTopBtn` в `modules/app_shell.inc` и списки захвата лямбд в `modules/app_playback_settings.inc`.
+- Восстановлены штатные строковые значения и вызовы `QCoreApplication` вместо маркеров `__PROTECTED_PSVms_*__` в `modules/core_services.inc` и `modules/application_entry.inc`.
+- Встроенный пароль и хэш учётной записи «Разработчик» сохранены без изменений.

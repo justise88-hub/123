@@ -194,7 +194,7 @@ void psvmsPruneOldLogs(const QString &directory)
 {
     QDir dir(directory);
     const QFileInfoList files = dir.entryInfoList(
-        QStringList{QStringLiteral("__PROTECTED_PSVms_8__")}, QDir::Files, QDir::Time);
+        QStringList{QStringLiteral("psvms_*.log")}, QDir::Files, QDir::Time);
     // Оставляем последние 20 запусков, не удаляя текущий файл.
     for (int i = 20; i < files.size(); ++i)
         QFile::remove(files.at(i).absoluteFilePath());
@@ -365,7 +365,7 @@ static void initializePsvmsLogging()
     candidates << QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation))
                     .filePath(QStringLiteral("logs"));
     candidates << QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                    .filePath(QStringLiteral("__PROTECTED_PSVms_7__"));
+                    .filePath(QStringLiteral("logs"));
 
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: candidates prepared"));
     for (const QString &candidate : candidates) {
@@ -392,11 +392,11 @@ static void initializePsvmsLogging()
 
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: directory selection complete"));
     const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss"));
-    g_psvmsLogFilePath = QDir(g_psvmsLogDirPath).filePath(QStringLiteral("__PROTECTED_PSVms_9__").arg(stamp));
+    g_psvmsLogFilePath = QDir(g_psvmsLogDirPath).filePath(QStringLiteral("psvms_%1.log").arg(stamp));
 #ifdef Q_OS_WIN
     g_psvmsLogFilePathWide = g_psvmsLogFilePath.toStdWString();
     g_psvmsDumpFilePathWide = QDir(g_psvmsLogDirPath)
-        .filePath(QStringLiteral("__PROTECTED_PSVms_10__").arg(stamp).arg(QCoreApplication::applicationPid()))
+        .filePath(QStringLiteral("psvms_%1_%2.log").arg(stamp).arg(QCoreApplication::applicationPid()))
         .toStdWString();
 #endif
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("logging init: before installing Qt message handler"));
@@ -463,7 +463,7 @@ static QString psvmsCreateEarlyStartupLog(int argc, char *argv[])
     if (!QDir().mkpath(logDir))
         return {};
     const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz"));
-    const QString filePath = QDir(logDir).filePath(QStringLiteral("__PROTECTED_PSVms_11__")
+    const QString filePath = QDir(logDir).filePath(QStringLiteral("psvms_early_%1.log")
         .arg(stamp).arg(QCoreApplication::applicationPid()));
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
 #ifdef Q_OS_WIN
     // Захватываем системный mutex ДО QApplication и любых окон/инициализации.
     // Имя фиксированное для всех копий PSVms текущего пользователя/сеанса Windows.
-    HANDLE psvmsInstanceMutex = CreateMutexW(nullptr, TRUE, L"__PROTECTED_PSVms_0__");
+    HANDLE psvmsInstanceMutex = CreateMutexW(nullptr, TRUE, L"Local\\PSVms_SingleInstance_Mutex");
     if (!psvmsInstanceMutex) {
         OutputDebugStringW(L"PSVms: не удалось создать mutex единственного экземпляра\\n");
         return 10;
@@ -508,8 +508,8 @@ int main(int argc, char *argv[])
     const QString earlyLogPath = psvmsCreateEarlyStartupLog(argc, argv);
     g_psvmsEarlyLogPath = earlyLogPath;
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("main: before application identity"));
-    QCoreApplication::__PROTECTED_PSVms_2__;
-    QCoreApplication::__PROTECTED_PSVms_3__;
+    QCoreApplication::setOrganizationName(QStringLiteral("PSVms"));
+    QCoreApplication::setApplicationName(QStringLiteral("PSVms"));
     psvmsAppendEarlyStartupLog(g_psvmsEarlyLogPath, QStringLiteral("main: application identity set"));
 
     // Важно: QSettings должен быть направлен в профиль текущего компьютера ДО

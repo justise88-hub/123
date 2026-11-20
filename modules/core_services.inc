@@ -130,7 +130,7 @@ bool Backup::importFrom(const QString &path, QString *error)
     QJsonParseError pe;
     const QJsonDocument doc = QJsonDocument::fromJson(f.readAll(), &pe);
     if (pe.error != QJsonParseError::NoError || !doc.isObject()
-        || doc.object().value(QStringLiteral("app")).toString() != __PROTECTED_PSVms_6__) {
+        || doc.object().value(QStringLiteral("app")).toString() != QLatin1String("PSVms")) {
         if (error) *error = T("Файл повреждён или не является резервной копией программы.");
         return false;
     }

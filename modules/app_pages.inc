@@ -2548,7 +2548,7 @@ void LiveViewPage::rebuildTree()
         }
         auto *it = new QTreeWidgetItem(parent, QStringList(e.name));
         it->setData(0, Qt::UserRole, e.id);
-        it->setData(0, Qt::UserRole + 1, e.ip + QLatin1Char(' ') + maskCredentialsInUrl(e.url));
+        it->setData(0, Qt::UserRole + 1, QUrl(e.url).host() + QLatin1Char(' ') + maskCredentialsInUrl(e.url));
         it->setIcon(0, liveDotIcon(liveStateColor(m_mgr, e.id)));
         it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
         m_items.insert(e.id, it);

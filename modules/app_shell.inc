@@ -1052,6 +1052,7 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
     auto *topStripLay = new QHBoxLayout(topStrip);
     topStripLay->setContentsMargins(0, 0, 10, 0);
     topStripLay->setSpacing(6);
+
     topStripLay->addWidget(m_top, 1);
     topStripLay->addWidget(vpnTopBtn, 0, Qt::AlignVCenter);
     right->addWidget(topStrip);

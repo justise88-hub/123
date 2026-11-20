@@ -1067,7 +1067,7 @@ QWidget *SettingsPage::buildGeneralTab()
     resetScaling->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 12px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
     resetScaling->setToolTip(T("Сбросить пресет, автоподбор, ручной масштаб, размер текста и элементов"));
     connect(resetScaling, &QPushButton::clicked, this,
-            [scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements]() {
+            [this, scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements, leftPanelPct, gridGapPct]() {
         // Сброс пока меняет только значения в форме. Для записи нажмите «Применить изменения».
         scale->setCurrentIndex(0);
         autoScreenScale->setChecked(true);
@@ -1084,7 +1084,7 @@ QWidget *SettingsPage::buildGeneralTab()
     applyScaling->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
     applyScaling->setToolTip(T("Сохранить выбранные параметры масштабирования"));
     connect(applyScaling, &QPushButton::clicked, this,
-            [scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements]() {
+            [this, scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements, leftPanelPct, gridGapPct]() {
         QSettings settings;
         settings.setValue(QStringLiteral("ui/scale"), scale->currentData().toDouble());
         settings.setValue(QStringLiteral("ui/autoScreenScale"), autoScreenScale->isChecked());
@@ -1803,7 +1803,7 @@ QWidget *SettingsPage::buildUsersTab()
     connect(vpnAutoConnect, &QCheckBox::toggled, this, [saveVpnPrefs](bool) { saveVpnPrefs(); });
     connect(vpnAutoReconnect, &QCheckBox::toggled, this, [saveVpnPrefs](bool) { saveVpnPrefs(); });
 
-    connect(vpnConnectBtn, &QPushButton::clicked, this, [this, saveVpnPrefs, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
+    connect(vpnConnectBtn, &QPushButton::clicked, this, [this, saveVpnPrefs, appendVpnDiag, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnScriptArgsEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
         if (!Users::current().isAdmin()) {
             SecurityAudit::write(QStringLiteral("permission_denied"), QStringLiteral("vpn.connect"));
             QMessageBox::warning(this, T("VPN"), T("Недостаточно прав: управление VPN доступно администратору."));
@@ -1873,7 +1873,7 @@ QWidget *SettingsPage::buildUsersTab()
         SecurityAudit::write(QStringLiteral("vpn_connected"), prof + QLatin1Char('/') + mode);
     });
 
-    connect(vpnDisconnectBtn, &QPushButton::clicked, this, [this, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnDisconnectCmdEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
+    connect(vpnDisconnectBtn, &QPushButton::clicked, this, [this, appendVpnDiag, vpnProfileEdit, vpnModeCombo, vpnTargetEdit, vpnClientPathEdit, vpnDisconnectCmdEdit, vpnStatusLabel, vpnConnectBtn, vpnDisconnectBtn] {
         if (!Users::current().isAdmin()) {
             SecurityAudit::write(QStringLiteral("permission_denied"), QStringLiteral("vpn.disconnect"));
             QMessageBox::warning(this, T("VPN"), T("Недостаточно прав: управление VPN доступно администратору."));
