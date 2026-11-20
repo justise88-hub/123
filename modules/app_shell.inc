@@ -1053,6 +1053,12 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
     topStripLay->setContentsMargins(0, 0, 10, 0);
     topStripLay->setSpacing(6);
 
+    auto *vpnTopBtn = new QToolButton(this);
+    vpnTopBtn->setObjectName(QStringLiteral("vpnTopBtn"));
+    vpnTopBtn->setPopupMode(QToolButton::InstantPopup);
+    vpnTopBtn->setStyleSheet(QStringLiteral(
+        "QToolButton#vpnTopBtn{background:#1B222E;color:#9AA3B2;border:1px solid #2F3848;border-radius:6px;padding:4px 10px;font-weight:700;}"
+        "QToolButton#vpnTopBtn:hover{border-color:#F5B700;}"));
     topStripLay->addWidget(m_top, 1);
     topStripLay->addWidget(vpnTopBtn, 0, Qt::AlignVCenter);
     right->addWidget(topStrip);
@@ -1103,12 +1109,6 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
     auto *vpnStatusBarLabel = new QLabel(this);
     vpnStatusBarLabel->setObjectName(QStringLiteral("vpnStatusBarLabel"));
 
-    auto *vpnTopBtn = new QToolButton(this);
-    vpnTopBtn->setObjectName(QStringLiteral("vpnTopBtn"));
-    vpnTopBtn->setPopupMode(QToolButton::InstantPopup);
-    vpnTopBtn->setStyleSheet(QStringLiteral(
-        "QToolButton#vpnTopBtn{background:#1B222E;color:#9AA3B2;border:1px solid #2F3848;border-radius:6px;padding:4px 10px;font-weight:700;}"
-        "QToolButton#vpnTopBtn:hover{border-color:#F5B700;}"));
     auto *vpnTopMenu = new QMenu(vpnTopBtn);
     QAction *vpnActConnect = vpnTopMenu->addAction(T("Подключить VPN"));
     QAction *vpnActDisconnect = vpnTopMenu->addAction(T("Отключить VPN"));

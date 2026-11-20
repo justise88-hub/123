@@ -2535,7 +2535,6 @@ protected:
     void fitHintFont();   // размер шрифта подсказки «Перетащите камеру сюда» под размер ячейки
 
 private:
-    void restart();
     void scheduleReconnect();
     bool isLocalCapture() const;   // адрес вида qcam:... — локальная карта видеозахвата, не RTSP
     void updateIdlePage();
