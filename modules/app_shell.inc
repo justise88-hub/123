@@ -532,77 +532,176 @@ QWidget *buildAiHomePanel(QWidget *parent)
 {
     auto *panel = new QFrame(parent);
     panel->setObjectName(QStringLiteral("aiHomePanel"));
-    panel->setMinimumWidth(250);
-    panel->setMaximumWidth(310);
+    panel->setMinimumWidth(258);
+    panel->setMaximumWidth(318);
     panel->setStyleSheet(QStringLiteral(
-        "QFrame#aiHomePanel{background-color:#15181E;background-image:url(:/branding/ai_background.png);"
-        "background-position:center;background-repeat:no-repeat;border:1px solid #343C4A;"
-        "border-radius:6px;} QLabel{color:#ECF0F5;background:rgba(13,15,18,175);} "
-        "QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;"
-        "border-radius:6px;padding:10px;text-align:left;font-weight:700;}"
-        "QPushButton:hover{background:#2A313D;border:1px solid #F5B700;color:#FFD54F;}"
-        "QPushButton:pressed{background:#F5B700;border:1px solid #FFD54F;color:#111317;}"));
+        "QFrame#aiHomePanel{"
+        "background-color:#12161E;"
+        "background-image:url(:/branding/ai_background.png);"
+        "background-position:center;"
+        "background-repeat:no-repeat;"
+        "border:1px solid #2C3444;"
+        "border-radius:6px;"
+        "}"
+        "QFrame#aiHeaderCard{"
+        "background:rgba(18,22,30,224);"
+        "border:1px solid #2A3242;"
+        "border-left:3px solid #F5B700;"
+        "border-radius:5px;"
+        "}"
+        "QFrame#aiVmsBadge{"
+        "background:#171C26;"
+        "border:1px solid #354054;"
+        "border-radius:8px;"
+        "}"
+        "QLabel#aiEyebrow{"
+        "color:#F5B700;"
+        "font-size:8.5pt;"
+        "font-weight:800;"
+        "letter-spacing:1.2px;"
+        "background:transparent;"
+        "}"
+        "QLabel#aiHeading{"
+        "color:#F4F7FB;"
+        "font-size:10.5pt;"
+        "font-weight:800;"
+        "background:transparent;"
+        "}"
+        "QLabel#aiIntro{"
+        "color:#B8C2D1;"
+        "font-size:9.2pt;"
+        "background:rgba(15,19,26,214);"
+        "border:1px solid #262E3D;"
+        "border-radius:5px;"
+        "padding:8px 10px;"
+        "}"
+        "QPushButton.aiVmsAction{"
+        "background:rgba(21,26,35,232);"
+        "color:#E6ECF5;"
+        "border:1px solid #2E3748;"
+        "border-left:3px solid #3B465B;"
+        "border-radius:5px;"
+        "padding:9px 11px;"
+        "text-align:left;"
+        "font-size:9.5pt;"
+        "font-weight:700;"
+        "}"
+        "QPushButton.aiVmsAction:hover{"
+        "background:rgba(31,37,49,242);"
+        "border-color:#F5B700;"
+        "border-left:3px solid #F5B700;"
+        "color:#FFD54F;"
+        "}"
+        "QPushButton.aiVmsAction:pressed{"
+        "background:#F5B700;"
+        "border-color:#FFD54F;"
+        "border-left:3px solid #111317;"
+        "color:#111317;"
+        "}"
+        "QPushButton#aiOpenChatButton{"
+        "background:#F5B700;"
+        "color:#111317;"
+        "border:1px solid #FFD54F;"
+        "font-size:9.8pt;"
+        "font-weight:800;"
+        "padding:10px 12px;"
+        "border-radius:5px;"
+        "}"
+        "QPushButton#aiOpenChatButton:hover{"
+        "background:#FFD54F;"
+        "border-color:#FFFFFF;"
+        "}"
+        "QPushButton#aiOpenChatButton:pressed{"
+        "background:#D89E00;"
+        "border-color:#F5B700;"
+        "}"));
+
     auto *layout = new QVBoxLayout(panel);
-    layout->setContentsMargins(14, 14, 14, 14);
-    layout->setSpacing(10);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(9);
 
-    auto *heading = new QLabel(T("ИИ-ПОМОЩНИК"), panel);
-    heading->setStyleSheet(QStringLiteral("font-size:10pt;font-weight:800;color:#F5B700;"));
-    heading->setAlignment(Qt::AlignCenter);
-    layout->addWidget(heading);
+    auto *headerCard = new QFrame(panel);
+    headerCard->setObjectName(QStringLiteral("aiHeaderCard"));
+    auto *headerLayout = new QHBoxLayout(headerCard);
+    headerLayout->setContentsMargins(10, 9, 10, 9);
+    headerLayout->setSpacing(10);
 
-    auto *avatar = new QLabel(panel);
+    auto *badgeFrame = new QFrame(headerCard);
+    badgeFrame->setObjectName(QStringLiteral("aiVmsBadge"));
+    badgeFrame->setFixedSize(64, 64);
+    auto *badgeLayout = new QVBoxLayout(badgeFrame);
+    badgeLayout->setContentsMargins(4, 4, 4, 4);
+    badgeLayout->setSpacing(0);
+
+    auto *avatar = new QLabel(badgeFrame);
     avatar->setAlignment(Qt::AlignCenter);
-    QPixmap avatarPixmap;
-    const QString avatarPath = QStringLiteral(":/branding/avatar.png");
-    avatarPixmap.load(avatarPath, "PNG");
-    if (avatarPixmap.isNull()) {
-        avatarPixmap = QPixmap(192, 192);
-        avatarPixmap.fill(QColor("#202328"));
-        QPainter avatarPainter(&avatarPixmap);
-        avatarPainter.setRenderHint(QPainter::Antialiasing, true);
-        avatarPainter.setPen(QPen(QColor("#F5B700"), 5));
-        avatarPainter.setBrush(Qt::NoBrush);
-        avatarPainter.drawEllipse(QRect(4, 4, 184, 184));
-        avatarPainter.setPen(QColor("#F5B700"));
-        avatarPainter.setFont(QFont(QStringLiteral("Segoe UI"), 54, QFont::Bold));
-        avatarPainter.drawText(avatarPixmap.rect(), Qt::AlignCenter, QStringLiteral("AI"));
+    avatar->setStyleSheet(QStringLiteral("background:transparent;"));
+    QPixmap camIconPm(52, 52);
+    camIconPm.fill(Qt::transparent);
+    {
+        QPainter p(&camIconPm);
+        p.setRenderHint(QPainter::Antialiasing, true);
+        p.setPen(QPen(QColor("#F5B700"), 2.2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(QColor("#1D2432"));
+        p.drawRoundedRect(QRectF(6.0, 14.0, 30.0, 22.0), 4.0, 4.0);
+        p.setBrush(QColor("#10141C"));
+        p.drawEllipse(QRectF(13.0, 18.0, 14.0, 14.0));
+        p.setPen(QPen(QColor("#63E6EE"), 1.8));
+        p.drawEllipse(QRectF(16.5, 21.5, 7.0, 7.0));
+        p.setPen(QPen(QColor("#9AA6B8"), 2.0, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(QPointF(36.0, 25.0), QPointF(44.0, 25.0));
+        p.drawLine(QPointF(44.0, 18.0), QPointF(44.0, 34.0));
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#F5B700"));
+        p.drawEllipse(QRectF(8.5, 16.5, 4.5, 4.5));
     }
-    avatar->setPixmap(avatarPixmap.scaled(112, 112, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    avatar->setMinimumHeight(116);
-    layout->addWidget(avatar);
+    avatar->setPixmap(camIconPm);
+    badgeLayout->addWidget(avatar);
+    headerLayout->addWidget(badgeFrame, 0, Qt::AlignVCenter);
 
-    auto *intro = new QLabel(T("Привет! Я помогу контролировать камеры, искать события и решать технические проблемы PSVMS."), panel);
+    auto *titleBox = new QVBoxLayout;
+    titleBox->setContentsMargins(0, 0, 0, 0);
+    titleBox->setSpacing(2);
+    auto *eyebrow = new QLabel(T("ВИДЕОАНАЛИТИКА · ИИ"), headerCard);
+    eyebrow->setObjectName(QStringLiteral("aiEyebrow"));
+    auto *heading = new QLabel(T("ИИ-ПОМОЩНИК VMS"), headerCard);
+    heading->setObjectName(QStringLiteral("aiHeading"));
+    auto *subBadge = new QLabel(T("● Мониторинг и архив"), headerCard);
+    subBadge->setStyleSheet(QStringLiteral("color:#63E6EE;font-size:8.5pt;font-weight:700;background:transparent;"));
+    titleBox->addWidget(eyebrow);
+    titleBox->addWidget(heading);
+    titleBox->addWidget(subBadge);
+    headerLayout->addLayout(titleBox, 1);
+    layout->addWidget(headerCard);
+
+    auto *intro = new QLabel(
+        T("Диагностика камер и потоков RTSP/ONVIF, поиск тревожных событий в архиве и помощь по настройке записи."),
+        panel);
+    intro->setObjectName(QStringLiteral("aiIntro"));
     intro->setWordWrap(true);
-    intro->setAlignment(Qt::AlignCenter);
-    intro->setStyleSheet(QStringLiteral("font-size:10pt;color:#D6DCE6;padding:6px;background:rgba(13,15,18,195);border-radius:4px;"));
     layout->addWidget(intro);
 
     auto addAction = [panel, layout](const QString &caption, const QString &prompt) {
         auto *button = new QPushButton(caption, panel);
+        button->setProperty("class", "aiVmsAction");
         layout->addWidget(button);
         QObject::connect(button, &QPushButton::clicked, panel, [panel, prompt] {
             panel->setProperty("psvms.aiPrompt", prompt);
             openYandexAssistant(panel);
         });
     };
-    addAction(T("▥  Статистика камер"), T("Помоги оценить состояние камер и объясни, какие показатели нужно проверить."));
-    addAction(T("⌕  Поиск событий"), T("Как быстро найти нужное событие в журнале PSVMS?"));
-    addAction(T("✓  Проверка системы"), T("Дай пошаговый список проверки работоспособности системы видеонаблюдения."));
-    addAction(T("?  Помощь по настройке"), T("Помоги настроить IP-камеру в PSVMS. С чего начать?"));
+    addAction(T("◉  Статус камер и потоков"), T("Помоги оценить состояние камер, онлайн-статус, RTSP-потоки и нагрузку в PSVMS."));
+    addAction(T("◷  Поиск событий и архива"), T("Как быстро найти нужное событие в журнале событий и проверить запись в архиве PSVMS?"));
+    addAction(T("⚙  Диагностика записи и сети"), T("Дай пошаговый список проверки записи в архив, сети и работоспособности камер."));
+    addAction(T("+  Подключение IP и ONVIF"), T("Помоги подключить и настроить IP-камеру или регистратор по RTSP/ONVIF/ISAPI в PSVMS."));
 
-    auto *openChat = new QPushButton(T("Открыть чат с ИИ  →"), panel);
+    auto *openChat = new QPushButton(T("Открыть ассистент VMS  →"), panel);
     openChat->setObjectName(QStringLiteral("aiOpenChatButton"));
-    openChat->setStyleSheet(QStringLiteral(
-        "QPushButton#aiOpenChatButton{background:#F5B700;"
-        "color:#111317;border:1px solid #FFD54F;font-size:10pt;font-weight:850;padding:11px;border-radius:6px;}"
-        "QPushButton#aiOpenChatButton:hover{background:#FFD54F;border-color:#FFFFFF;}"));
     layout->addWidget(openChat);
     QObject::connect(openChat, &QPushButton::clicked, panel, [panel] {
         openYandexAssistant(panel);
     });
 
-    // Нижняя подпись провайдера/технической поддержки убрана по запросу пользователя.
     layout->addStretch(1);
     return panel;
 }
@@ -819,112 +918,6 @@ MainWindow::MainWindow(CameraManager *mgr, QWidget *parent) : QMainWindow(parent
         CloudDialog dlg(this);
         dlg.exec();
     });
-    connect(m_top, &TopBar::simpleModeToggled, this, [](bool simple) {
-        // В простом режиме дополнительно отслеживаем вновь создаваемые UI-анимации:
-        // некоторые панели создают их отложенно, уже после первичного прохода остановки.
-        static QTimer *simpleModeAnimationGuard = nullptr;
-        if (simple) {
-            if (!simpleModeAnimationGuard) {
-                simpleModeAnimationGuard = new QTimer(qApp);
-                simpleModeAnimationGuard->setInterval(100);
-                QObject::connect(simpleModeAnimationGuard, &QTimer::timeout, qApp, [] {
-                    const auto currentWidgets = QApplication::allWidgets();
-                    for (QWidget *widget : currentWidgets) {
-                        if (!widget) continue;
-                        const auto currentAnimations = widget->findChildren<QAbstractAnimation *>();
-                        for (QAbstractAnimation *animation : currentAnimations) {
-                            if (!animation || animation->state() == QAbstractAnimation::Stopped)
-                                continue;
-                            // Завершаем конечные переходы до целевого состояния, чтобы
-                            // простой режим не оставлял панели/кнопки в промежуточной геометрии.
-                            if (animation->loopCount() != -1 && animation->duration() > 0)
-                                animation->setCurrentTime(animation->duration());
-                            if (animation->state() != QAbstractAnimation::Stopped)
-                                animation->stop();
-                        }
-                        if (auto *opacity = qobject_cast<QGraphicsOpacityEffect *>(widget->graphicsEffect()))
-                            opacity->setOpacity(1.0);
-                        if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(widget->graphicsEffect()))
-                            shadow->setBlurRadius(5.0);
-                    }
-                });
-            }
-            if (!simpleModeAnimationGuard->isActive())
-                simpleModeAnimationGuard->start();
-        } else if (simpleModeAnimationGuard) {
-            simpleModeAnimationGuard->stop();
-            simpleModeAnimationGuard->deleteLater();
-            simpleModeAnimationGuard = nullptr;
-        }
-        QSettings().setValue(QStringLiteral("perf/lowPower"), simple);
-        Cfg::reload(); // CfgNotifier обновляет все подписанные компоненты сразу.
-        // Переключение темы/плотности меняет геометрию idle-страниц без гарантированного
-        // ResizeEvent у дочерних QLabel. Пересчитываем положение эмблемы после layout pass.
-        const auto refreshCellArtworkAfterModeChange = [] {
-            for (QWidget *widget : QApplication::allWidgets()) {
-                if (auto *cell = qobject_cast<VideoCell *>(widget))
-                    cell->refreshCellArtwork();
-            }
-        };
-        // Qt может завершать перерасчёт вложенных layouts несколькими
-        // проходами после смены режима. Повторно фиксируем центр уже после
-        // каждого такого прохода; координаты считаются от m_idle каждой ячейки.
-        QTimer::singleShot(0, qApp, refreshCellArtworkAfterModeChange);
-        QTimer::singleShot(50, qApp, refreshCellArtworkAfterModeChange);
-        QTimer::singleShot(150, qApp, refreshCellArtworkAfterModeChange);
-        QTimer::singleShot(300, qApp, refreshCellArtworkAfterModeChange);
-
-        // QApplication::findChildren() не охватывает объекты анимаций,
-        // принадлежащие отдельным окнам/виджетам. Обходим дерево каждого
-        // существующего виджета, собирая анимации без дубликатов.
-        QList<QAbstractAnimation *> animations;
-        const auto widgets = QApplication::allWidgets();
-        for (QWidget *widget : widgets) {
-            if (!widget) continue;
-            const auto found = widget->findChildren<QAbstractAnimation *>();
-            for (QAbstractAnimation *animation : found) {
-                if (animation && !animations.contains(animation))
-                    animations.append(animation);
-            }
-        }
-
-        if (simple) {
-            for (QAbstractAnimation *animation : animations) {
-                if (!animation || animation->state() != QAbstractAnimation::Running)
-                    continue;
-                // Одноразовые переходы доводим до конечного состояния, чтобы
-                // панели/кнопки не оставались в промежуточной геометрии.
-                if (animation->loopCount() != -1 && animation->duration() > 0) {
-                    animation->setCurrentTime(animation->duration());
-                    if (animation->state() != QAbstractAnimation::Stopped)
-                        animation->stop();
-                } else {
-                    animation->stop();
-                }
-            }
-            for (QWidget *widget : widgets) {
-                if (!widget) continue;
-                if (auto *opacity = qobject_cast<QGraphicsOpacityEffect *>(widget->graphicsEffect()))
-                    opacity->setOpacity(1.0);
-                if (auto *glow = qobject_cast<QGraphicsDropShadowEffect *>(widget->graphicsEffect()))
-                    glow->setBlurRadius(5.0);
-            }
-            writePsvmsLog(QStringLiteral("Режим простой: активные UI-анимации остановлены на всех окнах; новые анимации отключены"));
-        } else {
-            // Возвращаем только постоянную пульсацию логотипа. Одноразовые
-            // переходы не запускаем повторно самопроизвольно.
-            for (QWidget *widget : widgets) {
-                if (!widget) continue;
-                const auto brandAnimations = widget->findChildren<QAbstractAnimation *>(QStringLiteral("brandPulse"));
-                for (QAbstractAnimation *animation : brandAnimations) {
-                    if (animation && animation->state() == QAbstractAnimation::Stopped)
-                        animation->start();
-                }
-            }
-            writePsvmsLog(QStringLiteral("Расширенный режим: анимации интерфейса снова разрешены"));
-        }
-    });
-
     // «+» в пустой ячейке → «Добавить новую камеру…»
     connect(m_live, &LiveViewPage::addCameraRequested, this, [this] {
         if (!Users::current().isAdmin()) {

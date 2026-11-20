@@ -596,12 +596,12 @@ void VideoCell::updateFrameGlow()
     const bool selected = property("selected").toBool();
     const bool dropTarget = property("dropTarget").toBool();
     const bool hovered = property("cellHover").toBool();
-    const QColor color = dropTarget ? QColor(145, 247, 255, 210)
-                       : selected ? QColor(99, 230, 238, 190)
-                       : hovered ? QColor(58, 168, 189, 145)
-                                 : QColor(45, 145, 170, 75);
+    const QColor color = dropTarget ? QColor(255, 200, 36, 225)
+                       : selected ? QColor(245, 183, 0, 195)
+                       : hovered ? QColor(245, 183, 0, 130)
+                                 : QColor(156, 118, 17, 70);
     m_frameGlow->setColor(color);
-    m_frameGlow->setBlurRadius(dropTarget ? 25 : selected ? 21 : hovered ? 17 : 10);
+    m_frameGlow->setBlurRadius(dropTarget ? 24 : selected ? 18 : hovered ? 14 : 8);
 }
 
 void VideoCell::setSelected(bool on)
@@ -765,11 +765,9 @@ void VideoCell::flash()
     m_flash->show();
     m_flash->raise();
     auto *a = new QPropertyAnimation(m_flashFx, "opacity", this);
-    a->setDuration(620);
+    a->setDuration(420);
     a->setKeyValueAt(0.0, 0.0);
-    a->setKeyValueAt(0.16, 0.92);
-    a->setKeyValueAt(0.42, 0.18);
-    a->setKeyValueAt(0.62, 0.58);
+    a->setKeyValueAt(0.22, 0.85);
     a->setKeyValueAt(1.0, 0.0);
     a->setEasingCurve(QEasingCurve::OutCubic);
     connect(a, &QPropertyAnimation::finished, m_flash, &QWidget::hide);
@@ -847,18 +845,18 @@ QPixmap VideoCell::dragPixmap() const
     p.setRenderHint(QPainter::Antialiasing);
     p.setRenderHint(QPainter::SmoothPixmapTransform);
     p.setOpacity(0.92);
-    p.setBrush(QColor(0x12, 0x13, 0x16, 210));
+    p.setBrush(QColor(0x12, 0x15, 0x1b, 235));
     p.setPen(Qt::NoPen);
-    p.drawRoundedRect(QRectF(0, 3, 260, 80), 14, 14);
+    p.drawRoundedRect(QRectF(0, 3, 260, 80), 8, 8);
     QLinearGradient shell(0, 2, 0, 82);
-    shell.setColorAt(0.0, QColor(0x4a, 0x45, 0x35));
-    shell.setColorAt(0.18, QColor(0x25, 0x25, 0x28));
-    shell.setColorAt(1.0, QColor(0x12, 0x13, 0x16));
+    shell.setColorAt(0.0, QColor(0x23, 0x20, 0x16));
+    shell.setColorAt(0.25, QColor(0x18, 0x1d, 0x26));
+    shell.setColorAt(1.0, QColor(0x12, 0x15, 0x1b));
     p.setBrush(shell);
-    p.setPen(QPen(QColor(0x28, 0xd5, 0xff), 2));
-    p.drawRoundedRect(QRectF(2, 2, 256, 78), 12, 12);
-    p.setPen(QPen(QColor(0xa4, 0xff, 0x3b, 150), 1));
-    p.drawRoundedRect(QRectF(5, 5, 250, 72), 9, 9);
+    p.setPen(QPen(QColor(0xf5, 0xb7, 0x00), 2));
+    p.drawRoundedRect(QRectF(2, 2, 256, 78), 6, 6);
+    p.setPen(QPen(QColor(0x2f, 0x37, 0x46, 210), 1));
+    p.drawRoundedRect(QRectF(5, 5, 250, 72), 5, 5);
 
     const QImage shot = snapshot();
     int textX = 16;
@@ -867,17 +865,17 @@ QPixmap VideoCell::dragPixmap() const
         p.drawImage(QPoint(14, 15 + (54 - thumb.height()) / 2), thumb);
         textX = 122;
     }
-    QFont f = p.font();
+    QFont f(QStringLiteral("Segoe UI"));
     f.setBold(true);
     f.setPixelSize(13);
     p.setFont(f);
-    p.setPen(QColor(0x28, 0xd5, 0xff));
+    p.setPen(QColor(0xf5, 0xb7, 0x00));
     const QString name = QFontMetrics(f).elidedText(m_titleText, Qt::ElideRight, 250 - textX);
     p.drawText(QRect(textX, 16, 250 - textX, 24), Qt::AlignVCenter | Qt::AlignLeft, name);
     f.setBold(false);
     f.setPixelSize(11);
     p.setFont(f);
-    p.setPen(QColor(0xb4, 0xb4, 0xb8));
+    p.setPen(QColor(0xc8, 0xd0, 0xdc));
     p.drawText(QRect(textX, 42, 250 - textX, 30), Qt::AlignTop | Qt::AlignLeft | Qt::TextWordWrap,
                T("Перетащите на другую ячейку"));
     return pm;
@@ -2193,7 +2191,7 @@ void VideoSurface::onFrame(const QVideoFrame &frame)
     QImage img = frame.toImage();
     if (img.isNull())
         return;
-    if (img.format() != QImage::Format_ARGB32_Premultiplied)
+    if (img.format() != QImage::Format_ARGB32_Premultiplied && img.format() != QImage::Format_RGB32)
         img = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     if (img.isNull())
         return;

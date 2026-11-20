@@ -370,7 +370,7 @@ QString newCameraId()
 
 int probeIntervalMs()
 {
-    return Cfg::view().lowPower ? 60000 : 20000;
+    return 20000;
 }
 
 } // namespace

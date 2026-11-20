@@ -540,20 +540,15 @@ void Cfg::reload()
 {
     QSettings s;
     View v;
-    v.lowPower = s.value(QStringLiteral("perf/lowPower"), false).toBool();
     v.maxFps = qBound(1, s.value(QStringLiteral("perf/maxFps"), 30).toInt(), 60);
-    v.smooth = s.value(QStringLiteral("perf/smooth"), false).toBool();
+    v.smooth = s.value(QStringLiteral("perf/smooth"), true).toBool();
     v.timestamp = s.value(QStringLiteral("view/timestamp"), true).toBool();
     v.showInfo = s.value(QStringLiteral("view/showInfo"), true).toBool();
     v.showFps = s.value(QStringLiteral("view/showFps"), true).toBool();
     const QString fmt = s.value(QStringLiteral("view/timeFormat")).toString();
     if (!fmt.isEmpty())
         v.timeFormat = fmt;
-    if (v.lowPower) {            // слабый компьютер: меньше кадров, без сглаживания и анимаций
-        v.maxFps = qMin(v.maxFps, 8);
-        v.smooth = false;
-    }
-    v.animations = !v.lowPower && s.value(QStringLiteral("ui/animations"), true).toBool();
+    v.animations = s.value(QStringLiteral("ui/animations"), true).toBool();
     g_view = v;
     g_loaded = true;
     Q_EMIT notifier()->changed();
@@ -1144,10 +1139,9 @@ QWidget *SettingsPage::buildVideoTab()
 QWidget *SettingsPage::buildPerformanceTab()
 {
     auto *form = new QFormLayout;
-    form->addRow(QString(), settingsCheck(this, T("Режим для слабого компьютера"), QStringLiteral("perf/lowPower"), false));
 
     auto *fps = new QSpinBox;
-    fps->setRange(1, 30);
+    fps->setRange(1, 60);
     fps->setValue(QSettings().value(QStringLiteral("perf/maxFps"), 30).toInt());
     connect(fps, &QSpinBox::valueChanged, this, [](int v) {
         QSettings().setValue(QStringLiteral("perf/maxFps"), v);
@@ -1158,12 +1152,11 @@ QWidget *SettingsPage::buildPerformanceTab()
     form->addRow(QString(), settingsCheck(this, T("Сглаживание картинки"), QStringLiteral("perf/smooth"), true));
     form->addRow(QString(), settingsCheck(this, T("Анимация интерфейса (заставка, Demo, значки и переходы)"),
                                           QStringLiteral("ui/animations"), true));
-    form->addRow(QString(), settingsCheck(this, T("Свечение рамок камер "),
+    form->addRow(QString(), settingsCheck(this, T("Свечение рамок камер"),
                                           QStringLiteral("ui/cameraGlow"), true));
 
-    auto *note = new QLabel(T("Режим для слабого компьютера: не более 8 кадров в секунду, без сглаживания и анимаций, "
-                              "реже проверяется связь с камерами. Ещё сильнее нагрузку снижает показ подпотока "
-                              "(у камеры: «Качество картинки → Низкое») и меньшее число ячеек в раскладке."), this);
+    auto *note = new QLabel(T("Для снижения нагрузки на сеть и декодер используйте показ подпотока "
+                              "(у камеры: «Качество картинки → Низкое») и оптимальное число ячеек в раскладке."), this);
     note->setWordWrap(true);
     note->setStyleSheet(QStringLiteral("color:#8a8a8e;"));
 
@@ -2008,7 +2001,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
 
     m_brand = new QLabel(QStringLiteral("PSVms"), this);
     m_brand->setObjectName(QStringLiteral("navBrand"));
-    m_brand->setStyleSheet(QStringLiteral("font-size:21px;font-weight:850;letter-spacing:1.2px;color:#F5B700;"));
+    m_brand->setStyleSheet(QStringLiteral("font-family:'Bahnschrift','Segoe UI',sans-serif;font-size:20px;font-weight:700;letter-spacing:1.1px;color:#F5B700;"));
     m_brand->setToolTip(App::title());
     head->setSpacing(5);
     head->addWidget(m_brandIcon, 0, Qt::AlignVCenter);
@@ -2039,7 +2032,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
     m_userBtn->setMinimumHeight(40);
     m_userBtn->setMaximumHeight(44);
     m_userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_userBtn->setStyleSheet(QStringLiteral("QPushButton#navUserBtn{padding:5px 8px;font-family:'Segoe UI';font-size:10pt;font-weight:600;text-align:left;}"));
+    m_userBtn->setStyleSheet(QStringLiteral("QPushButton#navUserBtn{padding:5px 10px;font-family:'Segoe UI',sans-serif;font-size:9.5pt;font-weight:600;letter-spacing:0.1px;text-align:left;}"));
     m_userBtn->setIconSize(QSize(36, 36));
     m_bottomLayout->addWidget(m_userBtn);
 
@@ -2437,7 +2430,9 @@ void SideNav::applyTexts()
         // Единая типографика меню в духе iVMS-4200: один шрифт,
         // один размер и одинаковая насыщенность для всех пунктов,
         // включая нижние действия. Длинные подписи не уменьшают шрифт.
-        QFont navFont(QStringLiteral("Segoe UI"), 10, QFont::DemiBold);
+        QFont navFont(QStringLiteral("Segoe UI"));
+        navFont.setPointSizeF(9.5);
+        navFont.setWeight(it.button->isChecked() ? QFont::DemiBold : QFont::Medium);
         navFont.setStyleStrategy(QFont::PreferAntialias);
         it.button->setFont(navFont);
         if (m_expanded &&
@@ -2449,7 +2444,9 @@ void SideNav::applyTexts()
         it.button->style()->unpolish(it.button);
         it.button->style()->polish(it.button);
     }
-    QFont userNavFont(QStringLiteral("Segoe UI"), 10, QFont::DemiBold);
+    QFont userNavFont(QStringLiteral("Segoe UI"));
+    userNavFont.setPointSizeF(9.5);
+    userNavFont.setWeight(QFont::DemiBold);
     userNavFont.setStyleStrategy(QFont::PreferAntialias);
     m_userBtn->setFont(userNavFont);
     m_userBtn->setText(m_expanded ? QStringLiteral("  ") + QFontMetrics(userNavFont).elidedText(m_userName, Qt::ElideRight, kNavExpandedWidth - 82) : QString());
@@ -3004,17 +3001,6 @@ TopBar::TopBar(CameraManager *mgr, QWidget *parent) : QWidget(parent), m_mgr(mgr
     m_cloud->setFont(cloudFont);
     m_cloud->setStyleSheet(QStringLiteral("QPushButton { padding: 1px 2px; }"));
 
-    m_mode = new QPushButton(this);
-    m_mode->setObjectName(QStringLiteral("modeBtn"));
-    m_mode->setCursor(Qt::PointingHandCursor);
-    m_mode->setFixedSize(176, 42);
-    fitTopBarText(m_mode, m_mode->text());
-    m_mode->setContentsMargins(2, 1, 2, 1);
-    m_mode->setStyleSheet(QStringLiteral(
-        "QPushButton#modeBtn{font-family:'Segoe UI';font-weight:600;"
-        "letter-spacing:0.2px;padding:0px 8px;}"));
-    m_mode->setToolTip(T("Переключить режим производительности"));
-
     // Кнопки занимают одинаковые ячейки и выравниваются по нижней линии сетки.
     const int y = height() - 42 - 8;
     int x = 304;
@@ -3027,20 +3013,14 @@ TopBar::TopBar(CameraManager *mgr, QWidget *parent) : QWidget(parent), m_mgr(mgr
     addDraggable(m_offline);
     addDraggable(m_status);
     addDraggable(m_fullscreen);
-    addDraggable(m_mode);
     // Hik-Connect закреплена в правом углу и не участвует в перетаскивании.
 
     connect(m_fullscreen, &QPushButton::clicked, this, &TopBar::fullscreenRequested);
     connect(m_status, &QPushButton::clicked, this, &TopBar::statusRequested);
     connect(m_cloud, &QPushButton::clicked, this, &TopBar::cloudRequested);
-    connect(m_mode, &QPushButton::clicked, this, [this] { emit simpleModeToggled(!m_simple); });
 
-    m_simple = QSettings().value(QStringLiteral("perf/lowPower"), false).toBool();
-    updateModeButton();
     updateStatusVisibility();
     connect(Cfg::notifier(), &CfgNotifier::changed, this, [this] {
-        const bool v = QSettings().value(QStringLiteral("perf/lowPower"), false).toBool();
-        if (v != m_simple) { m_simple = v; updateModeButton(); }
         updateStatusVisibility();
     });
     connect(m_mgr, &CameraManager::onlineChanged, this, &TopBar::updateCounts);
@@ -3241,13 +3221,5 @@ void TopBar::updateStatusVisibility()
     m_status->setVisible(visible);
 }
 
-void TopBar::updateModeButton()
-{
-    m_mode->setText(m_simple ? T("Простой режим") : T("Расширенный режим"));
-    fitTopBarText(m_mode, m_mode->text());
-    m_mode->setProperty("active", m_simple);
-    m_mode->style()->unpolish(m_mode);
-    m_mode->style()->polish(m_mode);
-}
 
 // ======================================================================

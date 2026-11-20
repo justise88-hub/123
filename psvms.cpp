@@ -1754,7 +1754,6 @@ namespace Cfg {
 
 // Настройки просмотра (кэшируются: читаются на каждый кадр)
 struct View {
-    bool lowPower = false;      // режим для слабого компьютера
     int maxFps = 30;            // целевой предел кадров отрисовки по умолчанию
     bool smooth = true;         // сглаживание картинки при масштабировании
     bool timestamp = true;      // дата и время на камерах
@@ -1947,20 +1946,20 @@ QWidget { color:#ECF0F5; background:transparent; }
 QLabel, QAbstractButton { min-width:0; }
 QMainWindow, QWidget#centralWidget, QStackedWidget { background:#0D0F12; }
 
-/* Left navigation rail: flat industrial console surface + left amber active bar */
-QWidget#sideNav { background:#12151B; border-right:1px solid #2A303C; }
+/* Left navigation rail (HikCentral Professional): crisp industrial typography + amber accent */
+QWidget#sideNav { background:#12151B; border-right:1px solid #2A303C; font-family:"Segoe UI", "Bahnschrift", sans-serif; }
 QWidget#sideNav QLabel, QWidget#sideNav QFrame { background:transparent; }
-QLabel#navBrand { color:#F5B700; font-family:"Bahnschrift", "Segoe UI", sans-serif; font-size:22px; font-weight:700; letter-spacing:1.4px; }
-QLabel#navUser { color:#9AA4B5; font-family:"Segoe UI", sans-serif; font-size:9.5pt; font-weight:600; }
+QLabel#navBrand { color:#F5B700; font-family:"Bahnschrift", "Segoe UI", sans-serif; font-size:21px; font-weight:700; letter-spacing:1.1px; }
+QLabel#navUser { color:#A3AEBF; font-family:"Segoe UI", sans-serif; font-size:9pt; font-weight:600; letter-spacing:0.15px; }
 QToolButton#navToggle {
  color:#D6DCE6; background:#1B2029; border:1px solid #2E3543; border-radius:4px;
- min-height:32px; padding:4px 8px; font-weight:700;
+ min-height:32px; padding:4px 8px; font-family:"Segoe UI", sans-serif; font-size:10pt; font-weight:600;
 }
 QToolButton#navToggle:hover { background:#252B37; border-color:#F5B700; color:#F5B700; }
 
-/* Navigation items: crisp 4px radius, flat slate surface, left amber accent stripe on active */
+/* Navigation items (HikCentral Professional): clean 9.5pt Segoe UI Medium/SemiBold with clear active state */
 QPushButton#navItem, QPushButton#navBottomItem, QPushButton#navLang, QPushButton#navUserBtn {
- color:#C8D0DC;
+ color:#CBD2DE;
  background:#171B22;
  border:1px solid #272D39;
  border-left:3px solid transparent;
@@ -1969,9 +1968,9 @@ QPushButton#navItem, QPushButton#navBottomItem, QPushButton#navLang, QPushButton
  padding:7px 12px;
  text-align:left;
  font-family:"Segoe UI", sans-serif;
- font-size:10pt;
- font-weight:600;
- letter-spacing:0.2px;
+ font-size:9.5pt;
+ font-weight:500;
+ letter-spacing:0.1px;
 }
 QPushButton#navItem:hover, QPushButton#navBottomItem:hover, QPushButton#navLang:hover, QPushButton#navUserBtn:hover {
  color:#FFFFFF;
@@ -2135,7 +2134,7 @@ QToolButton#cellPlay:hover {
  border:2px solid #FFFFFF;
 }
 QLabel#cellFlash {
- background:rgba(245,183,0,50);
+ background:rgba(245,183,0,58);
  border:2px solid #F5B700;
  border-radius:4px;
 }
@@ -2307,7 +2306,6 @@ signals:
     void statusRequested();
     void fullscreenRequested();
     void cloudRequested();
-    void simpleModeToggled(bool simple);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
@@ -2337,7 +2335,6 @@ private:
     QPoint m_dragOffset;
     QPoint m_dragPressGlobal;
     bool m_dragMoved = false;
-    bool m_simple = false;
 };
 
 // ======================================================================
