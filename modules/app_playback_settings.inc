@@ -426,10 +426,51 @@ PtzPanel::PtzPanel(CameraManager *mgr, QWidget *parent) : QWidget(parent), m_mgr
     lay->addWidget(new QLabel(T("Скорость"), box), 4, 0);
     lay->addWidget(m_speed, 4, 1, 1, 2);
 
+    m_presetEdit = new QLineEdit(box);
+    m_presetEdit->setPlaceholderText(T("Пресет (1..10)"));
+    m_presetEdit->setFixedWidth(90);
+    m_presetEdit->setEnabled(false);
+
+    m_presetGo = new QToolButton(box);
+    m_presetGo->setText(T("Перейти"));
+    m_presetGo->setEnabled(false);
+
+    m_presetSave = new QToolButton(box);
+    m_presetSave->setText(T("Сохр."));
+    m_presetSave->setEnabled(false);
+
+    auto *presetRow = new QHBoxLayout;
+    presetRow->setContentsMargins(0, 0, 0, 0);
+    presetRow->setSpacing(4);
+    presetRow->addWidget(m_presetEdit);
+    presetRow->addWidget(m_presetGo);
+    presetRow->addWidget(m_presetSave);
+    lay->addLayout(presetRow, 5, 0, 1, 3);
+
+    connect(m_presetGo, &QToolButton::clicked, this, [this] {
+        if (!canCurrentUserPerformAction(QStringLiteral("ptz.control")))
+            return;
+        const CameraEntry *e = m_mgr->find(m_cameraId);
+        const QString tok = m_presetEdit ? m_presetEdit->text().trimmed() : QString();
+        if (!e || !e->hasPtz() || tok.isEmpty())
+            return;
+        const double sp = m_speed->value() / 8.0;
+        ptzGotoPreset(m_nam, {e->ptzXAddr, e->ptzToken, e->ptzUser, e->ptzPassword}, tok, sp, sp, sp);
+    });
+    connect(m_presetSave, &QToolButton::clicked, this, [this] {
+        if (!canCurrentUserPerformAction(QStringLiteral("ptz.control")))
+            return;
+        const CameraEntry *e = m_mgr->find(m_cameraId);
+        const QString tok = m_presetEdit ? m_presetEdit->text().trimmed() : QString();
+        if (!e || !e->hasPtz() || tok.isEmpty())
+            return;
+        ptzSetPreset(m_nam, {e->ptzXAddr, e->ptzToken, e->ptzUser, e->ptzPassword}, tok, tok);
+    });
+
     m_note = new QLabel(T("Выберите поворотную камеру, добавленную по ONVIF"), box);
     static_cast<QLabel *>(m_note)->setWordWrap(true);
     m_note->setStyleSheet(QStringLiteral("color:#6b7480; font-size:10pt;"));
-    lay->addWidget(m_note, 5, 0, 1, 3);
+    lay->addWidget(m_note, 6, 0, 1, 3);
 
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(0, 0, 0, 0);
@@ -447,13 +488,17 @@ void PtzPanel::setCamera(const QString &cameraId)
 void PtzPanel::updateEnabled()
 {
     const CameraEntry *e = m_mgr->find(m_cameraId);
-    const bool on = isProVersion() && QSettings().value(QStringLiteral("camera/ptzEnabled"), true).toBool() && e && e->hasPtz();
+    const bool allowed = canCurrentUserPerformAction(QStringLiteral("ptz.control"));
+    const bool on = allowed && isProVersion() && QSettings().value(QStringLiteral("camera/ptzEnabled"), true).toBool() && e && e->hasPtz();
     for (int i = 0; i < 9; ++i)
         if (i != 4)
             m_dirs[i]->setEnabled(on);
     m_zoomIn->setEnabled(on);
     m_zoomOut->setEnabled(on);
     m_speed->setEnabled(on);
+    if (m_presetEdit) m_presetEdit->setEnabled(on);
+    if (m_presetGo) m_presetGo->setEnabled(on);
+    if (m_presetSave) m_presetSave->setEnabled(on);
     m_note->setVisible(!on);
 }
 
@@ -1063,14 +1108,35 @@ QWidget *SettingsPage::buildVideoTab()
     minFree->setSingleStep(256);
     minFree->setSuffix(QStringLiteral(" МБ"));
     minFree->setValue(qBound(256, QSettings().value(QStringLiteral("storage/minFreeMB"), 1024).toInt(), 20480));
-    minFree->setToolTip(T("Когда свободного места станет меньше этого значения, новые сегменты записи не будут создаваться. Старые записи автоматически не удаляются."));
+    minFree->setToolTip(T("Порог свободного места на диске: при автоочистке удаляются самые старые закрытые сегменты, а при нехватке места новые сегменты не создаются."));
     connect(minFree, qOverload<int>(&QSpinBox::valueChanged), this, [](int value) {
         QSettings().setValue(QStringLiteral("storage/minFreeMB"), value);
     });
     form->addRow(T("Минимум свободного места для записи"), minFree);
 
+    auto *autoCleanup = new QCheckBox(T("Автоматически удалять старые закрытые сегменты"), this);
+    autoCleanup->setChecked(QSettings().value(QStringLiteral("storage/autoCleanup"), true).toBool());
+
+    auto *retentionDays = new QSpinBox(this);
+    retentionDays->setRange(1, 3650);
+    retentionDays->setSuffix(T(" дн."));
+    retentionDays->setValue(qBound(1, QSettings().value(QStringLiteral("storage/retentionDays"), 30).toInt(), 3650));
+    retentionDays->setEnabled(autoCleanup->isChecked());
+
+    connect(autoCleanup, &QCheckBox::toggled, this, [retentionDays](bool on) {
+        QSettings().setValue(QStringLiteral("storage/autoCleanup"), on);
+        retentionDays->setEnabled(on);
+    });
+    connect(retentionDays, qOverload<int>(&QSpinBox::valueChanged), this, [](int days) {
+        QSettings().setValue(QStringLiteral("storage/retentionDays"), days);
+    });
+    form->addRow(T("Автоочистка архива"), autoCleanup);
+    form->addRow(T("Срок хранения записей"), retentionDays);
+
+    const bool isAdmin = Users::current().isAdmin();
     auto *scheduleEnabled = new QCheckBox(T("Включить недельное расписание записи"), this);
     scheduleEnabled->setChecked(QSettings().value(QStringLiteral("recordSchedule/enabled"), false).toBool());
+    scheduleEnabled->setEnabled(isAdmin);
     auto *scheduleFrom = new QTimeEdit(QSettings().value(QStringLiteral("recordSchedule/from"), QTime(0, 0)).toTime(), this);
     auto *scheduleTo = new QTimeEdit(QSettings().value(QStringLiteral("recordSchedule/to"), QTime(23, 59)).toTime(), this);
     scheduleFrom->setDisplayFormat(QStringLiteral("HH:mm"));

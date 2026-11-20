@@ -632,9 +632,22 @@ EventsPage::EventsPage(QWidget *parent) : QWidget(parent)
         button->setMinimumHeight(34);
         button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
+    auto *filterEdit = new QLineEdit(this);
+    filterEdit->setPlaceholderText(T("Фильтр по камере, событию или статусу…"));
+    filterEdit->setClearButtonEnabled(true);
+    filterEdit->setMinimumHeight(34);
+    filterEdit->setMaximumWidth(320);
+
+    auto *ackCommentEdit = new QLineEdit(this);
+    ackCommentEdit->setPlaceholderText(T("Комментарий оператора при подтверждении…"));
+    ackCommentEdit->setMinimumHeight(34);
+    ackCommentEdit->setMaximumWidth(300);
+
     auto *top = new QHBoxLayout;
     top->addWidget(ackSelected);
     top->addWidget(ackAll);
+    top->addWidget(ackCommentEdit);
+    top->addWidget(filterEdit);
     top->addStretch(1);
     top->addWidget(clear);
 
@@ -654,9 +667,37 @@ EventsPage::EventsPage(QWidget *parent) : QWidget(parent)
     lay->addLayout(top);
     lay->addWidget(m_table, 1);
 
-    connect(ackSelected, &QPushButton::clicked, this, [this] {
+    connect(ackSelected, &QPushButton::clicked, this, [this, ackCommentEdit] {
         const int row = m_table->currentRow();
-        if (row >= 0) acknowledgeRow(row);
+        if (row < 0) return;
+        const QString note = ackCommentEdit->text().trimmed();
+        if (!note.isEmpty()) {
+            if (auto *evItem = m_table->item(row, 2)) {
+                const QString marker = QStringLiteral(" [") + note + QStringLiteral("]");
+                if (!evItem->text().endsWith(marker)) {
+                    evItem->setText(evItem->text() + marker);
+                    evItem->setToolTip(evItem->text());
+                }
+            }
+            ackCommentEdit->clear();
+        }
+        acknowledgeRow(row);
+    });
+    connect(filterEdit, &QLineEdit::textChanged, this, [this](const QString &q) {
+        const QString needle = q.trimmed();
+        for (int r = 0; r < m_table->rowCount(); ++r) {
+            bool match = needle.isEmpty();
+            if (!match) {
+                for (int c = 0; c < m_table->columnCount(); ++c) {
+                    const auto *it = m_table->item(r, c);
+                    if (it && it->text().contains(needle, Qt::CaseInsensitive)) {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+            m_table->setRowHidden(r, !match);
+        }
     });
     connect(ackAll, &QPushButton::clicked, this, [this] {
         for (int row = 0; row < m_table->rowCount(); ++row)
@@ -742,6 +783,8 @@ void EventsPage::addEvent(const QString &camera, const QString &text)
 
 void EventsPage::acknowledgeRow(int row)
 {
+    if (!canCurrentUserPerformAction(QStringLiteral("events.ack")))
+        return;
     if (row < 0 || row >= m_table->rowCount())
         return;
     auto *status = m_table->item(row, 3);
@@ -1905,20 +1948,23 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
         }
         QTextStream out(&f);
         out.setEncoding(QStringConverter::Utf8);
-        out << QStringLiteral("Name;Group;Online;Recording;Quality;StreamUrl\n");
+        out << QStringLiteral("Name;Group;Online;Recording;Quality;MainStreamUrl;SubStreamUrl\n");
         for (const CameraEntry &c : m_mgr->cameras()) {
             QString safeName = c.name;
             safeName.replace(QLatin1Char(';'), QLatin1Char(','));
             QString safeGroup = c.group;
             safeGroup.replace(QLatin1Char(';'), QLatin1Char(','));
-            QString safeUrl = c.liveUrl.trimmed().isEmpty() ? c.url : c.liveUrl;
-            safeUrl.replace(QLatin1Char(';'), QLatin1Char(','));
+            QString safeMain = maskCredentialsInUrl(c.url);
+            safeMain.replace(QLatin1Char(';'), QLatin1Char(','));
+            QString safeSub = maskCredentialsInUrl(c.liveUrl.trimmed().isEmpty() ? c.url : c.liveUrl);
+            safeSub.replace(QLatin1Char(';'), QLatin1Char(','));
             out << safeName << QLatin1Char(';')
                 << safeGroup << QLatin1Char(';')
                 << (m_mgr->isOnline(c.id) ? QStringLiteral("online") : QStringLiteral("offline")) << QLatin1Char(';')
                 << (m_mgr->isStarted(c.id) ? QStringLiteral("recording") : QStringLiteral("stopped")) << QLatin1Char(';')
                 << c.viewQuality << QLatin1Char(';')
-                << safeUrl << QLatin1Char('\n');
+                << safeMain << QLatin1Char(';')
+                << safeSub << QLatin1Char('\n');
         }
         emit message(T("Отчёт диагностики сохранён: %1").arg(path));
     });
@@ -2332,6 +2378,44 @@ void LiveViewPage::openArchive(const QString &cameraId)
 void LiveViewPage::openArchiveForSelectedCamera()
 {
     openArchive(m_grid ? m_grid->selectedCameraId() : QString());
+}
+
+void LiveViewPage::exportArchiveIntervalForCamera(const QString &cameraId, qint64 fromMs, qint64 toMs)
+{
+    if (!canCurrentUserPerformAction(QStringLiteral("archive.export")) && !Users::current().isAdmin()) {
+        emit message(T("Недостаточно прав для экспорта фрагмента архива."));
+        return;
+    }
+    if (cameraId.trimmed().isEmpty()) {
+        emit message(T("Выберите камеру для экспорта фрагмента архива."));
+        return;
+    }
+    if (toMs <= fromMs) {
+        emit message(T("Некорректный временной интервал экспорта."));
+        return;
+    }
+    const QString suggestedName = QStringLiteral("psvms_export_%1_%2.json")
+        .arg(cameraId)
+        .arg(QDateTime::fromMSecsSinceEpoch(fromMs).toString(QStringLiteral("yyyyMMdd_HHmmss")));
+    const QString outPath = QFileDialog::getSaveFileName(
+        this, T("Экспорт интервала архива"), suggestedName,
+        T("Плейлист фрагмента архива (*.json);;Все файлы (*)"));
+    if (outPath.isEmpty())
+        return;
+
+    RecordingIndex idx;
+    const QString dbPath = m_mgr->storageRoot() + QStringLiteral("/segments.sqlite");
+    QList<SegmentInfo> matched;
+    if (idx.open(dbPath)) {
+        matched = idx.segmentsInRange(cameraId, fromMs, toMs);
+        idx.close();
+    }
+    QString err;
+    if (!writeArchiveRangeManifest(cameraId, outPath, fromMs, toMs, matched, &err)) {
+        emit message(err);
+        return;
+    }
+    emit message(T("Экспортирован фрагмент архива (%1 сегм.): %2").arg(matched.size()).arg(outPath));
 }
 
 

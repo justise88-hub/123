@@ -468,6 +468,9 @@ void CameraWorker::recordSession(RecordingIndex &index, bool &gotData)
                 av_packet_unref(pkt);
                 continue;
             }
+            // Политика хранения и автоочистка старых закрытых сегментов (активный сегмент не трогаем)
+            purgeClosedSegmentsByPolicy(index.connectionName(), m_cfg.storageRoot, m_cfg.minimumFreeBytes);
+
             // Защита архива от заполнения диска: не начинаем новый сегмент,
             // если накопитель недоступен или свободного места ниже заданного порога.
             QStorageInfo storage(m_cfg.storageRoot);
@@ -2418,6 +2421,53 @@ void ptzStop(QNetworkAccessManager *nam, const PtzTarget &target)
     send(nam, target, body);
 }
 
+void ptzGotoPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetToken, double speedPan = 0.5, double speedTilt = 0.5, double speedZoom = 0.5)
+{
+    if (!target.valid() || presetToken.trimmed().isEmpty())
+        return;
+    const QString body = QStringLiteral(
+        "<tptz:GotoPreset><tptz:ProfileToken>%1</tptz:ProfileToken>"
+        "<tptz:PresetToken>%2</tptz:PresetToken>"
+        "<tptz:Speed><tt:PanTilt x=\"%3\" y=\"%4\" xmlns:tt=\"http://www.onvif.org/ver10/schema\"/>"
+        "<tt:Zoom x=\"%5\" xmlns:tt=\"http://www.onvif.org/ver10/schema\"/></tptz:Speed>"
+        "</tptz:GotoPreset>")
+        .arg(target.token.toHtmlEscaped())
+        .arg(presetToken.trimmed().toHtmlEscaped())
+        .arg(speedPan, 0, 'f', 2)
+        .arg(speedTilt, 0, 'f', 2)
+        .arg(speedZoom, 0, 'f', 2);
+    send(nam, target, body);
+}
+
+void ptzSetPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetName, const QString &presetToken = QString())
+{
+    if (!target.valid())
+        return;
+    QString tokenPart;
+    if (!presetToken.trimmed().isEmpty())
+        tokenPart = QStringLiteral("<tptz:PresetToken>%1</tptz:PresetToken>").arg(presetToken.trimmed().toHtmlEscaped());
+    QString namePart;
+    if (!presetName.trimmed().isEmpty())
+        namePart = QStringLiteral("<tptz:PresetName>%1</tptz:PresetName>").arg(presetName.trimmed().toHtmlEscaped());
+    const QString body = QStringLiteral(
+        "<tptz:SetPreset><tptz:ProfileToken>%1</tptz:ProfileToken>%2%3</tptz:SetPreset>")
+        .arg(target.token.toHtmlEscaped(), tokenPart, namePart);
+    send(nam, target, body);
+}
+
+void ptzRemovePreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetToken)
+{
+    if (!target.valid() || presetToken.trimmed().isEmpty())
+        return;
+    const QString body = QStringLiteral(
+        "<tptz:RemovePreset><tptz:ProfileToken>%1</tptz:ProfileToken>"
+        "<tptz:PresetToken>%2</tptz:PresetToken></tptz:RemovePreset>")
+        .arg(target.token.toHtmlEscaped())
+        .arg(presetToken.trimmed().toHtmlEscaped());
+    send(nam, target, body);
+}
+
+
 // ======================================================================
 // core/portscan.cpp
 // ======================================================================
@@ -2542,11 +2592,136 @@ bool RecordingIndex::open(const QString &dbPath)
             " size_bytes INTEGER NOT NULL DEFAULT 0)"))
         && q.exec(QStringLiteral(
             "CREATE INDEX IF NOT EXISTS idx_segments_cam_time "
-            "ON segments(camera_id, start_ms)"));
+            "ON segments(camera_id, start_ms)"))
+        && q.exec(QStringLiteral(
+            "CREATE TABLE IF NOT EXISTS downtime_log ("
+            " id          INTEGER PRIMARY KEY AUTOINCREMENT,"
+            " camera_id   TEXT    NOT NULL,"
+            " start_ms    INTEGER NOT NULL,"
+            " end_ms      INTEGER NOT NULL,"
+            " duration_ms INTEGER NOT NULL,"
+            " reason      TEXT    NOT NULL DEFAULT '')"))
+        && q.exec(QStringLiteral(
+            "CREATE INDEX IF NOT EXISTS idx_downtime_cam_start "
+            "ON downtime_log(camera_id, start_ms)"));
     if (!ok)
         m_lastError = q.lastError().text();
     return ok;
 }
+
+namespace {
+
+void purgeClosedSegmentsByPolicy(const QString &connName, const QString &storageRoot, qint64 minFreeBytes)
+{
+    if (connName.isEmpty())
+        return;
+    QSettings s;
+    const bool autoCleanup = s.value(QStringLiteral("storage/autoCleanup"), true).toBool();
+    const int retentionDays = qBound(0, s.value(QStringLiteral("storage/retentionDays"), 30).toInt(), 3650);
+    if (!autoCleanup)
+        return;
+
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    const qint64 cutoffMs = (retentionDays > 0)
+        ? (nowMs - qint64(retentionDays) * 86400LL * 1000LL)
+        : 0LL;
+
+    struct SegRow {
+        qint64 id;
+        QString cameraId;
+        QString path;
+        qint64 endMs;
+        qint64 sizeBytes;
+    };
+
+    QList<SegRow> candidates;
+    {
+        QSqlDatabase db = QSqlDatabase::database(connName, false);
+        if (!db.isOpen())
+            return;
+        QSqlQuery q(db);
+        q.prepare(QStringLiteral(
+            "SELECT id, camera_id, path, end_ms, size_bytes FROM segments "
+            "WHERE end_ms IS NOT NULL AND end_ms > 0 "
+            "ORDER BY end_ms ASC, id ASC"));
+        if (!q.exec())
+            return;
+        while (q.next()) {
+            candidates.append({
+                q.value(0).toLongLong(),
+                q.value(1).toString(),
+                q.value(2).toString(),
+                q.value(3).toLongLong(),
+                q.value(4).toLongLong()
+            });
+        }
+    }
+
+    QStorageInfo storage(storageRoot);
+    storage.refresh();
+    qint64 availBytes = (storage.isValid() && storage.isReady()) ? storage.bytesAvailable() : -1LL;
+
+    QList<qint64> deletedIds;
+    for (const SegRow &row : std::as_const(candidates)) {
+        const bool expiredByAge = (cutoffMs > 0 && row.endMs < cutoffMs);
+        const bool lowDiskSpace = (availBytes >= 0 && minFreeBytes > 0 && availBytes < minFreeBytes);
+        if (!expiredByAge && !lowDiskSpace)
+            break;
+
+        qint64 reclaimed = 0;
+        if (!row.path.isEmpty()) {
+            QFileInfo fi(row.path);
+            if (fi.exists()) {
+                reclaimed = qMax<qint64>(0, fi.size());
+                QFile::remove(row.path);
+            }
+        }
+        if (reclaimed <= 0 && row.sizeBytes > 0)
+            reclaimed = row.sizeBytes;
+
+        deletedIds.append(row.id);
+        if (availBytes >= 0) {
+            storage.refresh();
+            if (storage.isValid() && storage.isReady())
+                availBytes = storage.bytesAvailable();
+            else
+                availBytes += reclaimed;
+        }
+    }
+
+    if (!deletedIds.isEmpty()) {
+        QSqlDatabase db = QSqlDatabase::database(connName, false);
+        if (!db.isOpen())
+            return;
+        QSqlQuery del(db);
+        del.prepare(QStringLiteral("DELETE FROM segments WHERE id = ?"));
+        for (qint64 id : std::as_const(deletedIds)) {
+            del.addBindValue(id);
+            del.exec();
+        }
+    }
+}
+
+void recordDowntimeEvent(const QString &connName, const QString &cameraId, qint64 startMs, qint64 endMs, const QString &reason)
+{
+    if (connName.isEmpty() || cameraId.isEmpty() || endMs <= startMs)
+        return;
+    QSqlDatabase db = QSqlDatabase::database(connName, false);
+    if (!db.isOpen())
+        return;
+    QSqlQuery q(db);
+    q.prepare(QStringLiteral(
+        "INSERT INTO downtime_log(camera_id, start_ms, end_ms, duration_ms, reason) "
+        "VALUES(?, ?, ?, ?, ?)"));
+    q.addBindValue(cameraId);
+    q.addBindValue(startMs);
+    q.addBindValue(endMs);
+    q.addBindValue(endMs - startMs);
+    q.addBindValue(reason);
+    q.exec();
+}
+
+} // namespace
 
 void RecordingIndex::close()
 {
@@ -2659,6 +2834,128 @@ SegmentInfo RecordingIndex::segmentAt(const QString &cameraId, qint64 ms)
     }
     return {};
 }
+
+namespace {
+
+QString maskCredentialsInUrl(const QString &rawUrl)
+{
+    const QString trimmed = rawUrl.trimmed();
+    if (trimmed.isEmpty())
+        return QString();
+    QUrl u(trimmed);
+    if (u.isValid() && !u.scheme().isEmpty() && !u.host().isEmpty()) {
+        if (!u.userInfo().isEmpty()) {
+            const QString user = u.userName();
+            u.setUserInfo(user.isEmpty() ? QStringLiteral("***") : (user + QStringLiteral(":***")));
+        }
+        return u.toString(QUrl::FullyEncoded);
+    }
+    const int schemeEnd = trimmed.indexOf(QStringLiteral("://"));
+    const int atPos = (schemeEnd >= 0) ? trimmed.indexOf(QLatin1Char('@'), schemeEnd + 3) : trimmed.indexOf(QLatin1Char('@'));
+    const int slashPos = (schemeEnd >= 0) ? trimmed.indexOf(QLatin1Char('/'), schemeEnd + 3) : trimmed.indexOf(QLatin1Char('/'));
+    if (atPos > 0 && (slashPos < 0 || atPos < slashPos)) {
+        const QString prefix = (schemeEnd >= 0) ? trimmed.left(schemeEnd + 3) : QString();
+        const QString authPart = trimmed.mid(prefix.size(), atPos - prefix.size());
+        const QString rest = trimmed.mid(atPos);
+        const int colon = authPart.indexOf(QLatin1Char(':'));
+        const QString maskedAuth = (colon >= 0)
+            ? (authPart.left(colon) + QStringLiteral(":***"))
+            : QStringLiteral("***");
+        return prefix + maskedAuth + rest;
+    }
+    return trimmed;
+}
+
+} // namespace
+
+namespace {
+
+bool writeArchiveRangeManifest(const QString &cameraId,
+                               const QString &outputPath,
+                               qint64 fromMs,
+                               qint64 toMs,
+                               const QList<SegmentInfo> &segments,
+                               QString *errorOut)
+{
+    if (outputPath.trimmed().isEmpty()) {
+        if (errorOut) *errorOut = T("Не указан путь сохранения фрагмента архива.");
+        return false;
+    }
+    if (toMs <= fromMs) {
+        if (errorOut) *errorOut = T("Конец интервала должен быть позже начала.");
+        return false;
+    }
+    QJsonArray segArray;
+    for (const SegmentInfo &s : segments) {
+        QJsonObject obj;
+        obj.insert(QStringLiteral("path"), s.path);
+        obj.insert(QStringLiteral("startMs"), s.startMs);
+        obj.insert(QStringLiteral("endMs"), s.endMs);
+        obj.insert(QStringLiteral("sizeBytes"), s.sizeBytes);
+        segArray.append(obj);
+    }
+    QJsonObject root;
+    root.insert(QStringLiteral("cameraId"), cameraId);
+    root.insert(QStringLiteral("fromMs"), fromMs);
+    root.insert(QStringLiteral("toMs"), toMs);
+    root.insert(QStringLiteral("exportedAt"), QDateTime::currentDateTime().toString(Qt::ISODate));
+    root.insert(QStringLiteral("segmentCount"), segments.size());
+    root.insert(QStringLiteral("segments"), segArray);
+
+    QFile f(outputPath);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        if (errorOut) *errorOut = T("Не удалось записать файл экспорта: %1").arg(f.errorString());
+        return false;
+    }
+    f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    return true;
+}
+
+} // namespace
+
+namespace {
+
+QString saveScheduledSnapshot(const QString &screenshotDir, const QString &cameraId, const QImage &frame, QString *errorOut)
+{
+    if (frame.isNull()) {
+        if (errorOut) *errorOut = T("Пустой кадр для снимка.");
+        return QString();
+    }
+    const QString root = screenshotDir.trimmed().isEmpty() ? Cfg::screenshotDir() : screenshotDir.trimmed();
+    const QString dateSubdir = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd"));
+    const QString safeCam = cameraId.trimmed().isEmpty() ? QStringLiteral("camera") : cameraId.trimmed();
+    const QDir dir(QDir(root).filePath(QStringLiteral("scheduled/") + dateSubdir));
+    if (!QDir().mkpath(dir.absolutePath())) {
+        if (errorOut) *errorOut = T("Не удалось создать папку снимков: %1").arg(dir.absolutePath());
+        return QString();
+    }
+    const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("HHmmss_zzz"));
+    const QString filePath = dir.filePath(QStringLiteral("%1_%2.jpg").arg(safeCam, stamp));
+    if (!frame.save(filePath, "JPG", 88)) {
+        if (errorOut) *errorOut = T("Не удалось сохранить снимок: %1").arg(filePath);
+        return QString();
+    }
+    return filePath;
+}
+
+} // namespace
+
+namespace {
+
+bool canCurrentUserPerformAction(const QString &actionKey)
+{
+    const UserInfo u = Users::current();
+    if (u.isAdmin())
+        return true;
+    if (actionKey == QLatin1String("ptz.control")
+        || actionKey == QLatin1String("events.ack")
+        || actionKey == QLatin1String("snapshot.save")) {
+        return !u.id.isEmpty();
+    }
+    return false;
+}
+
+} // namespace
 
 // ======================================================================
 // core/rtsp_probe.cpp

@@ -1712,6 +1712,9 @@ private:
     QToolButton *m_zoomIn = nullptr;
     QToolButton *m_zoomOut = nullptr;
     QSlider *m_speed = nullptr;
+    QLineEdit *m_presetEdit = nullptr;
+    QToolButton *m_presetGo = nullptr;
+    QToolButton *m_presetSave = nullptr;
     QWidget *m_note = nullptr;
 };
 

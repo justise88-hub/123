@@ -1790,6 +1790,10 @@ void VideoGrid::editCamera(const QString &cameraId)
 
 void VideoGrid::saveSnapshot(VideoCell *cell)
 {
+    if (!canCurrentUserPerformAction(QStringLiteral("snapshot.save"))) {
+        emit message(T("Недостаточно прав для сохранения снимка"));
+        return;
+    }
     const QImage img = cell->snapshot();
     if (img.isNull()) {
         emit message(T("Нет кадра для снимка"));
