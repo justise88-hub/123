@@ -323,3 +323,8 @@
 - Исправлены порядок создания `vpnTopBtn` в `modules/app_shell.inc` и списки захвата лямбд в `modules/app_playback_settings.inc`.
 - Восстановлены штатные строковые значения и вызовы `QCoreApplication` вместо маркеров `__PROTECTED_PSVms_*__` в `modules/core_services.inc` и `modules/application_entry.inc`.
 - Встроенный пароль и хэш учётной записи «Разработчик» сохранены без изменений.
+
+## Исправление ошибок компоновки LNK2019 / LNK1120
+- Убраны анонимные пространства имён вокруг внешних функций `purgeClosedSegmentsByPolicy`, `maskCredentialsInUrl`, `writeArchiveRangeManifest` и `canCurrentUserPerformAction` в `modules/core_services.inc`.
+- Добавлены определения методов класса `VpnController` (включая конструктор `VpnController(QObject *)`) в `psvms.cpp`.
+- Встроенный пароль и хэш учётной записи «Разработчик» сохранены без изменений.

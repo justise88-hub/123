@@ -1499,6 +1499,46 @@ private:
     QString m_mode;
     QString m_endpoint;
 };
+
+VpnController::VpnController(QObject *parent)
+    : QObject(parent)
+{
+}
+
+QString VpnController::currentProfile() const
+{
+    return m_profile;
+}
+
+QString VpnController::currentMode() const
+{
+    return m_mode;
+}
+
+QString VpnController::statusText() const
+{
+    if (!m_connected)
+        return T("VPN: выкл");
+    return m_profile.isEmpty() ? T("VPN: подключено") : T("VPN: %1").arg(m_profile);
+}
+
+void VpnController::connectProfile(const QString &profileName, const QString &mode, const QString &endpointOrConfig)
+{
+    m_profile = profileName.trimmed();
+    m_mode = mode.trimmed();
+    m_endpoint = endpointOrConfig.trimmed();
+    m_connected = true;
+    const QString summary = m_profile.isEmpty() ? T("VPN подключён") : T("VPN подключён: %1").arg(m_profile);
+    emit stateChanged(true, summary);
+    emit message(summary);
+}
+
+void VpnController::disconnectProfile()
+{
+    m_connected = false;
+    emit stateChanged(false, T("VPN отключён"));
+    emit message(T("VPN отключён"));
+}
 }
 
 class MainWindow : public QMainWindow {

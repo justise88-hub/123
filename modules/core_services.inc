@@ -2612,8 +2612,6 @@ bool RecordingIndex::open(const QString &dbPath)
     return ok;
 }
 
-namespace {
-
 void purgeClosedSegmentsByPolicy(const QString &connName, const QString &storageRoot, qint64 minFreeBytes)
 {
     if (connName.isEmpty())
@@ -2724,7 +2722,6 @@ void recordDowntimeEvent(const QString &connName, const QString &cameraId, qint6
     q.exec();
 }
 
-} // namespace
 
 void RecordingIndex::close()
 {
@@ -2838,8 +2835,6 @@ SegmentInfo RecordingIndex::segmentAt(const QString &cameraId, qint64 ms)
     return {};
 }
 
-namespace {
-
 QString maskCredentialsInUrl(const QString &rawUrl)
 {
     const QString trimmed = rawUrl.trimmed();
@@ -2869,9 +2864,6 @@ QString maskCredentialsInUrl(const QString &rawUrl)
     return trimmed;
 }
 
-} // namespace
-
-namespace {
 
 bool writeArchiveRangeManifest(const QString &cameraId,
                                const QString &outputPath,
@@ -2914,7 +2906,6 @@ bool writeArchiveRangeManifest(const QString &cameraId,
     return true;
 }
 
-} // namespace
 
 namespace {
 
@@ -2943,8 +2934,6 @@ QString saveScheduledSnapshot(const QString &screenshotDir, const QString &camer
 
 } // namespace
 
-namespace {
-
 bool canCurrentUserPerformAction(const QString &actionKey)
 {
     const UserInfo u = Users::current();
@@ -2958,7 +2947,6 @@ bool canCurrentUserPerformAction(const QString &actionKey)
     return false;
 }
 
-} // namespace
 
 // ======================================================================
 // core/rtsp_probe.cpp
