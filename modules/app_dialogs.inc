@@ -1161,7 +1161,7 @@ CloudDialog::CloudDialog(QWidget *parent) : QDialog(parent)
           "возможно только через официальный SDK и ключи разработчика Hikvision (Open Platform), "
           "поэтому в этой версии получение камер из облака не работает."), this);
     info->setWordWrap(true);
-    info->setStyleSheet(QStringLiteral("color:#63e6ee;"));
+    info->setStyleSheet(QStringLiteral("color:#A8A8A8;"));
 
     m_region = new QComboBox(this);
     m_region->addItems({T("Россия и СНГ"), T("Европа"), T("Азия"), T("Америка"), T("Другой регион")});

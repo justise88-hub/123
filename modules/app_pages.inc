@@ -531,7 +531,7 @@ void DevicesPage::refreshStates()
         const bool online = m_mgr->isOnline(id);
         QTableWidgetItem *link = m_table->item(row, DevColLink);
         link->setText(online ? T("● В сети") : T("● Не в сети"));
-        link->setForeground(QBrush(QColor(online ? "#63e6ee" : "#63e6ee")));
+        link->setForeground(QBrush(QColor(online ? "#A8A8A8" : "#A8A8A8")));
 
         QString rec;
         if (!e->record)
@@ -1852,14 +1852,14 @@ QColor liveStateColor(const CameraManager *mgr, const QString &id)
 {
     switch (mgr->stateOf(id)) {
     case CameraWorker::State::Recording:
-        return QColor("#63e6ee");
+        return QColor("#3FB950");
     case CameraWorker::State::Connecting:
     case CameraWorker::State::Reconnecting:
-        return QColor("#63e6ee");
+        return QColor("#F5B700");
     case CameraWorker::State::Stopped:
-        return mgr->isOnline(id) ? QColor("#63e6ee") : QColor("#63e6ee");
+        return mgr->isOnline(id) ? QColor("#8A8A8A") : QColor("#D9534F");
     }
-    return QColor("#63e6ee");
+    return QColor("#8A8A8A");
 }
 
 } // namespace
@@ -1870,7 +1870,7 @@ static QIcon makeArchiveToolbarIcon()
     pm.fill(Qt::transparent);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
-    p.setPen(QPen(QColor("#63e6ee"), 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setPen(QPen(QColor("#A8A8A8"), 2.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.setBrush(Qt::NoBrush);
     p.drawRoundedRect(QRectF(4, 6, 24, 22), 4, 4);
     p.drawLine(4, 12, 28, 12);
@@ -1929,9 +1929,9 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     camSummary->setObjectName(QStringLiteral("camSummaryBadge"));
     camSummary->setStyleSheet(QStringLiteral(
         "QLabel#camSummaryBadge {"
-        "  color: #C5CDD8;"
-        "  background: #141820;"
-        "  border: 1px solid #262E3D;"
+        "  color: #CECECE;"
+        "  background: #1A1A1A;"
+        "  border: 1px solid #323232;"
         "  border-radius: 4px;"
         "  padding: 5px 8px;"
         "  margin: 0 8px 6px 8px;"
@@ -1959,15 +1959,15 @@ LiveViewPage::LiveViewPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     statusFilter->addItem(T("Только не в сети"), 2);
     statusFilter->addItem(T("На записи"), 3);
     statusFilter->setStyleSheet(QStringLiteral(
-        "QComboBox { background:#141820; color:#D5DCE6; border:1px solid #262E3D; border-radius:4px; padding:4px 8px; margin:0 8px 6px 8px; font-size:11px; }"
-        "QComboBox QAbstractItemView { background:#141820; color:#D5DCE6; selection-background-color:#262E3D; }"
+        "QComboBox { background:#1A1A1A; color:#DEDEDE; border:1px solid #323232; border-radius:4px; padding:4px 8px; margin:0 8px 6px 8px; font-size:11px; }"
+        "QComboBox QAbstractItemView { background:#1A1A1A; color:#DEDEDE; selection-background-color:#323232; }"
     ));
     lv->addWidget(statusFilter);
 
     auto *exportDiagBtn = new QPushButton(T("Отчёт диагностики…"), left);
     exportDiagBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { background:#181D27; color:#F5B700; border:1px solid #2E384B; border-radius:4px; padding:5px 8px; margin:0 8px 6px 8px; font-size:11px; font-weight:600; }"
-        "QPushButton:hover { background:#202735; border-color:#F5B700; }"
+        "QPushButton { background:#202020; color:#F5B700; border:1px solid #3C3C3C; border-radius:4px; padding:5px 8px; margin:0 8px 6px 8px; font-size:11px; font-weight:600; }"
+        "QPushButton:hover { background:#2B2B2B; border-color:#F5B700; }"
     ));
     lv->addWidget(exportDiagBtn);
     connect(exportDiagBtn, &QPushButton::clicked, this, [this] {

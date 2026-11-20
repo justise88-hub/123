@@ -73,9 +73,9 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
     m_volumeSlider->setToolTip(T("Громкость камеры"));
     m_volumeSlider->setStyleSheet(QStringLiteral(
         "QSlider#cellVolume{background:rgba(21,24,30,242);border:1px solid #F5B700;border-radius:6px;padding:5px;}"
-        "QSlider#cellVolume::groove:vertical{background:#12151B;border:1px solid #343C4A;width:7px;border-radius:3px;}"
+        "QSlider#cellVolume::groove:vertical{background:#161616;border:1px solid #3F3F3F;width:7px;border-radius:3px;}"
         "QSlider#cellVolume::sub-page:vertical{background:#F5B700;border-radius:3px;}"
-        "QSlider#cellVolume::add-page:vertical{background:#1F242D;border-radius:3px;}"
+        "QSlider#cellVolume::add-page:vertical{background:#262626;border-radius:3px;}"
         "QSlider#cellVolume::handle:vertical{background:#FFD54F;border:2px solid #FFFFFF;width:15px;height:15px;margin:-4px -5px;border-radius:8px;}"));
     m_volumeSlider->setVisible(false);
     m_closeBtn = new QToolButton(m_bar);
@@ -108,7 +108,7 @@ VideoCell::VideoCell(QWidget *parent) : QFrame(parent)
     m_play = new QToolButton(m_idle);
     m_play->setObjectName(QStringLiteral("cellPlay"));
     m_play->setText(QString());
-    m_play->setIcon(makeCellIcon(QStringLiteral("play"), QColor(28, 31, 35)));
+    m_play->setIcon(makeCellIcon(QStringLiteral("play"), QColor(32, 32, 32)));
     m_play->setIconSize(QSize(28, 28));
     m_play->setFixedSize(66, 66);
     m_play->setToolTip(T("Запустить камеру"));
@@ -674,8 +674,8 @@ static QPixmap makeHikCameraCellArtwork(const QSize &sz)
     const qreal pad = side * 0.10;
     const QRectF box(pad, pad, side - 2.0 * pad, side - 2.0 * pad);
 
-    p.setBrush(QColor(0x18, 0x1D, 0x27, 225));
-    p.setPen(QPen(QColor(0x34, 0x3C, 0x4A), 1.5));
+    p.setBrush(QColor(32, 32, 32, 225));
+    p.setPen(QPen(QColor(63, 63, 63), 1.5));
     p.drawRoundedRect(box, side * 0.16, side * 0.16);
 
     const qreal arm = side * 0.11;
@@ -688,8 +688,8 @@ static QPixmap makeHikCameraCellArtwork(const QSize &sz)
     const qreal cw = box.width() * 0.44;
     const qreal ch = box.height() * 0.28;
     const QRectF camBody(box.center().x() - cw * 0.56, box.center().y() - ch * 0.5, cw, ch);
-    p.setBrush(QColor(0x25, 0x2C, 0x38));
-    p.setPen(QPen(QColor(0xD5, 0xDC, 0xE6), 1.5));
+    p.setBrush(QColor(47, 47, 47));
+    p.setPen(QPen(QColor(222, 222, 222), 1.5));
     p.drawRoundedRect(camBody, 4.0, 4.0);
 
     QPolygonF lens;
@@ -853,17 +853,17 @@ QPixmap VideoCell::dragPixmap() const
     p.setRenderHint(QPainter::Antialiasing);
     p.setRenderHint(QPainter::SmoothPixmapTransform);
     p.setOpacity(0.92);
-    p.setBrush(QColor(0x12, 0x15, 0x1b, 235));
+    p.setBrush(QColor(22, 22, 22, 235));
     p.setPen(Qt::NoPen);
     p.drawRoundedRect(QRectF(0, 3, 260, 80), 8, 8);
     QLinearGradient shell(0, 2, 0, 82);
     shell.setColorAt(0.0, QColor(0x23, 0x20, 0x16));
-    shell.setColorAt(0.25, QColor(0x18, 0x1d, 0x26));
-    shell.setColorAt(1.0, QColor(0x12, 0x15, 0x1b));
+    shell.setColorAt(0.25, QColor(31, 31, 31));
+    shell.setColorAt(1.0, QColor(22, 22, 22));
     p.setBrush(shell);
     p.setPen(QPen(QColor(0xf5, 0xb7, 0x00), 2));
     p.drawRoundedRect(QRectF(2, 2, 256, 78), 6, 6);
-    p.setPen(QPen(QColor(0x2f, 0x37, 0x46, 210), 1));
+    p.setPen(QPen(QColor(59, 59, 59, 210), 1));
     p.drawRoundedRect(QRectF(5, 5, 250, 72), 5, 5);
 
     const QImage shot = snapshot();
@@ -883,7 +883,7 @@ QPixmap VideoCell::dragPixmap() const
     f.setBold(false);
     f.setPixelSize(11);
     p.setFont(f);
-    p.setPen(QColor(0xc8, 0xd0, 0xdc));
+    p.setPen(QColor(210, 210, 210));
     p.drawText(QRect(textX, 42, 250 - textX, 30), Qt::AlignTop | Qt::AlignLeft | Qt::TextWordWrap,
                T("Перетащите на другую ячейку"));
     return pm;
@@ -2130,7 +2130,7 @@ CameraHoverPreview::CameraHoverPreview(QTableWidget *table, CameraManager *manag
     m_popup->setAttribute(Qt::WA_ShowWithoutActivating);
     m_popup->setAttribute(Qt::WA_DeleteOnClose, false);
     m_popup->setObjectName(QStringLiteral("cameraHoverPreview"));
-    m_popup->setStyleSheet(QStringLiteral("#cameraHoverPreview { background:#171b20; border:1px solid #c6a52b; border-radius:7px; }"));
+    m_popup->setStyleSheet(QStringLiteral("#cameraHoverPreview { background:#1C1C1C; border:1px solid #c6a52b; border-radius:7px; }"));
     auto *layout = new QVBoxLayout(m_popup);
     layout->setContentsMargins(7, 7, 7, 7);
     layout->setSpacing(6);
@@ -2140,7 +2140,7 @@ CameraHoverPreview::CameraHoverPreview(QTableWidget *table, CameraManager *manag
     m_video->setStatusText(T("Предпросмотр камеры"));
     m_info = new QLabel(m_popup);
     m_info->setWordWrap(true);
-    m_info->setStyleSheet(QStringLiteral("color:#e7e9ec; padding:3px 5px;"));
+    m_info->setStyleSheet(QStringLiteral("color:#EAEAEA; padding:3px 5px;"));
     layout->addWidget(m_video);
     layout->addWidget(m_info);
 
@@ -2481,7 +2481,7 @@ void VideoSurface::paintEvent(QPaintEvent *)
         const int fpsW = QFontMetrics(f).horizontalAdvance(fpsText) + 20;
         const QRect fpsBox(8, 8, fpsW, 24);
         p.setPen(QPen(QColor(245, 183, 0, 210), 1));
-        p.setBrush(QColor(16, 19, 24, 215));
+        p.setBrush(QColor(20, 20, 20, 215));
         p.drawRoundedRect(fpsBox, 4, 4);
         p.setPen(QColor(255, 213, 79));
         p.drawText(fpsBox, Qt::AlignCenter, fpsText);
@@ -2492,13 +2492,13 @@ void VideoSurface::paintEvent(QPaintEvent *)
     if (m_cameraRunning && width() >= 48 && height() >= 36) {
         const QRect badge(width() - 42, 8, 34, 26);
         p.setPen(QPen(QColor(245, 183, 0, 220), 1));
-        p.setBrush(QColor(16, 19, 24, 215));
+        p.setBrush(QColor(20, 20, 20, 215));
         p.drawRoundedRect(badge, 4, 4);
 
         const qreal cx = badge.center().x();
         const qreal cy = badge.center().y();
-        p.setPen(QPen(QColor(236, 240, 245), 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        p.setBrush(QColor(31, 36, 45));
+        p.setPen(QPen(QColor(240, 240, 240), 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.setBrush(QColor(38, 38, 38));
         QPainterPath body;
         body.moveTo(cx - 9, cy - 5);
         body.lineTo(cx + 3, cy - 5);
@@ -2524,7 +2524,7 @@ void VideoSurface::paintEvent(QPaintEvent *)
         p.setPen(QPen(QColor(255, 213, 79, 230), 1));
         p.setBrush(QColor(245, 183, 0, 235));
         p.drawRoundedRect(box, 4, 4);
-        p.setPen(QColor(17, 19, 23));
+        p.setPen(QColor(20, 20, 20));
         p.drawText(box, Qt::AlignCenter, z);
     }
 }

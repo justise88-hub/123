@@ -21,11 +21,11 @@ PlaybackPage::PlaybackPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     // ---- левая колонка: простой поиск и навигация по архиву ----
     auto *archiveTitle = new QLabel(T("АРХИВ ЗАПИСЕЙ"), this);
     archiveTitle->setStyleSheet(QStringLiteral(
-        "QLabel { color:#8beaf0; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #3b4249,stop:1 #22272d); "
-        "border:1px solid #287f9e; border-radius:7px; padding:11px 12px; font-size:10pt; font-weight:800; }"));
+        "QLabel { color:#BEBEBE; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #424242,stop:1 #282828); "
+        "border:1px solid #636363; border-radius:7px; padding:11px 12px; font-size:10pt; font-weight:800; }"));
     auto *archiveHint = new QLabel(T("Выберите камеру и дату, затем откройте нужную запись."), this);
     archiveHint->setWordWrap(true);
-    archiveHint->setStyleSheet(QStringLiteral("color:#8995a5; font-size:10pt; padding:2px 3px;"));
+    archiveHint->setStyleSheet(QStringLiteral("color:#979797; font-size:10pt; padding:2px 3px;"));
 
     m_camera = new QComboBox(this);
     m_camera->setMinimumHeight(34);
@@ -39,7 +39,7 @@ PlaybackPage::PlaybackPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     m_search = new QLineEdit(this);
     m_search->setPlaceholderText(T("Поиск записи по времени…"));
     m_archiveCount = new QLabel(this);
-    m_archiveCount->setStyleSheet(QStringLiteral("color:#7d8998; font-size:10pt;"));
+    m_archiveCount->setStyleSheet(QStringLiteral("color:#8A8A8A; font-size:10pt;"));
 
     auto *quickDates = new QHBoxLayout;
     auto *todayBtn = new QPushButton(T("Сегодня"), this);
@@ -72,11 +72,11 @@ PlaybackPage::PlaybackPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
     leftBox->setLayout(left);
     leftBox->setFixedWidth(360);
     leftBox->setStyleSheet(QStringLiteral(
-        "QListWidget { border:1px solid #59616a; border-radius:7px; padding:4px; "
-        "background:#1a1e23; alternate-background-color:#22272d; }"
-        "QListWidget::item { padding:8px 7px; border-radius:5px; border-bottom:1px solid #343a41; }"
-        "QListWidget::item:hover { background:#343b42; }"
-        "QListWidget::item:selected { background:#17647a; color:#f2ffff; }"
+        "QListWidget { border:1px solid #626262; border-radius:7px; padding:4px; "
+        "background:#1E1E1E; alternate-background-color:#282828; }"
+        "QListWidget::item { padding:8px 7px; border-radius:5px; border-bottom:1px solid #3A3A3A; }"
+        "QListWidget::item:hover { background:#3B3B3B; }"
+        "QListWidget::item:selected { background:#484848; color:#F8F8F8; }"
         "QPushButton { min-height:30px; }"));
 
     connect(todayBtn, &QPushButton::clicked, this, [this] {
@@ -469,7 +469,7 @@ PtzPanel::PtzPanel(CameraManager *mgr, QWidget *parent) : QWidget(parent), m_mgr
 
     m_note = new QLabel(T("Выберите поворотную камеру, добавленную по ONVIF"), box);
     static_cast<QLabel *>(m_note)->setWordWrap(true);
-    m_note->setStyleSheet(QStringLiteral("color:#6b7480; font-size:10pt;"));
+    m_note->setStyleSheet(QStringLiteral("color:#767676; font-size:10pt;"));
     lay->addWidget(m_note, 6, 0, 1, 3);
 
     auto *root = new QVBoxLayout(this);
@@ -693,7 +693,7 @@ public:
         m_role->addItem(T("Оператор (только просмотр)"), QStringLiteral("operator"));
         m_role->setCurrentIndex(1);
         m_msg = new QLabel(this);
-        m_msg->setStyleSheet(QStringLiteral("color:#63e6ee;"));
+        m_msg->setStyleSheet(QStringLiteral("color:#A8A8A8;"));
         m_msg->setWordWrap(true);
         auto *hint = new QLabel(T("Новый пользователь будет создан без пароля. При необходимости пароль можно задать позже."), this);
         hint->setWordWrap(true);
@@ -740,7 +740,7 @@ public:
         m_pass2 = new QLineEdit(this);
         m_pass2->setEchoMode(QLineEdit::Password);
         m_msg = new QLabel(this);
-        m_msg->setStyleSheet(QStringLiteral("color:#63e6ee;"));
+        m_msg->setStyleSheet(QStringLiteral("color:#A8A8A8;"));
         m_msg->setWordWrap(true);
 
         auto *hint = new QLabel(T("Новый пароль для пользователя «%1». Оставьте пустым, чтобы убрать пароль.").arg(userName), this);
@@ -794,7 +794,7 @@ public:
         m_chat->setReadOnly(true);
         m_chat->setPlaceholderText(T("Здесь появятся ответы ИИ-помощника."));
         m_chat->setStyleSheet(QStringLiteral(
-            "QTextEdit{color:#ECF0F5;background-color:#12151B;"
+            "QTextEdit{color:#F0F0F0;background-color:#161616;"
             "background-image:url(:/branding/ai_background.png);background-position:center;"
             "background-repeat:no-repeat;border:1px solid #C99600;border-radius:6px;"
             "padding:12px;font-size:10pt;}"));
@@ -932,16 +932,16 @@ SettingsPage::SettingsPage(CameraManager *mgr, QWidget *parent) : QWidget(parent
         bar->setIconSize(QSize(18, 18));
         bar->setStyleSheet(QStringLiteral(
             "QTabBar::tab { min-height:38px; padding:8px 16px; margin:3px 4px 0 0; "
-            "background:#181D27; color:#C8D0DC; border:1px solid #2A3242; "
+            "background:#202020; color:#D2D2D2; border:1px solid #363636; "
             "border-radius:6px; font-size:10pt; font-weight:600; }"
-            "QTabBar::tab:hover { background:#222A38; color:#F5B700; border:1px solid #455169; }"
-            "QTabBar::tab:selected { background:#232A38; color:#F5B700; "
+            "QTabBar::tab:hover { background:#2D2D2D; color:#F5B700; border:1px solid #575757; }"
+            "QTabBar::tab:selected { background:#2E2E2E; color:#F5B700; "
             "border:1px solid #F5B700; border-bottom:2px solid #F5B700; }"
-            "QTabBar QToolButton { background:#181D27; color:#D5DCE6; "
-            "border:1px solid #2A3242; border-radius:6px; min-width:36px; "
+            "QTabBar QToolButton { background:#202020; color:#DEDEDE; "
+            "border:1px solid #363636; border-radius:6px; min-width:36px; "
             "max-width:36px; min-height:36px; max-height:36px; margin:3px; padding:2px; }"
-            "QTabBar QToolButton:hover { background:#222A38; color:#F5B700; border:1px solid #F5B700; }"
-            "QTabBar QToolButton:pressed { background:#F5B700; color:#111317; }"));
+            "QTabBar QToolButton:hover { background:#2D2D2D; color:#F5B700; border:1px solid #F5B700; }"
+            "QTabBar QToolButton:pressed { background:#F5B700; color:#141414; }"));
     }
     tabs->addTab(buildGeneralTab(), T("Общие"));
     tabs->addTab(buildVideoTab(), T("Видео и папки"));
@@ -1064,7 +1064,7 @@ QWidget *SettingsPage::buildGeneralTab()
     form->addRow(T("Отступы сетки камер (применяется сразу)"), gridGapPct);
 
     auto *resetScaling = new QPushButton(T("Вернуть масштабирование к стандартным настройкам"), this);
-    resetScaling->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 12px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
+    resetScaling->setStyleSheet(QStringLiteral("QPushButton{background:#262626;color:#F0F0F0;border:1px solid #3F3F3F;border-radius:5px;padding:6px 12px;font-weight:600;}QPushButton:hover{background:#343434;border-color:#F5B700;color:#FFD54F;}"));
     resetScaling->setToolTip(T("Сбросить пресет, автоподбор, ручной масштаб, размер текста и элементов"));
     connect(resetScaling, &QPushButton::clicked, this,
             [this, scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements, leftPanelPct, gridGapPct]() {
@@ -1081,7 +1081,7 @@ QWidget *SettingsPage::buildGeneralTab()
     form->addRow(QString(), resetScaling);
 
     auto *applyScaling = new QPushButton(T("Применить изменения"), this);
-    applyScaling->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
+    applyScaling->setStyleSheet(QStringLiteral("QPushButton{background:#2F2F2F;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#141414;}"));
     applyScaling->setToolTip(T("Сохранить выбранные параметры масштабирования"));
     connect(applyScaling, &QPushButton::clicked, this,
             [this, scale, autoScreenScale, fhdAutoScale, manualInterface, manualText, manualElements, leftPanelPct, gridGapPct]() {
@@ -1301,7 +1301,7 @@ QWidget *SettingsPage::buildNetworkTab()
     auto *result = new QLabel(T("Укажите IP-адрес и порт, затем нажмите «Проверить порт»."), this);
     result->setWordWrap(true);
     result->setMinimumHeight(54);
-    result->setStyleSheet(QStringLiteral("QLabel{padding:12px;border-radius:10px;background:#25272d;color:#d8bd82;}"));
+    result->setStyleSheet(QStringLiteral("QLabel{padding:12px;border-radius:10px;background:#292929;color:#d8bd82;}"));
     auto *advice = new QLabel(this);
     advice->setWordWrap(true);
     advice->setText(T("Подсказки по типовым портам:\n• RTSP: 554/TCP — видеопоток большинства IP-камер.\n• HTTP: 80/TCP; HTTPS: 443/TCP — веб-интерфейс.\n• Hikvision/HiWatch: 8000/TCP — SDK/Server, 554/TCP — RTSP.\n• Dahua: 37777/TCP — сервисный порт, 554/TCP — RTSP.\n• ONVIF часто использует HTTP-порт устройства (обычно 80 или заданный вручную).\nПорты могут быть изменены производителем, установщиком или администратором. Сверяйтесь с сетевыми настройками конкретной модели."));
@@ -1373,7 +1373,7 @@ QWidget *SettingsPage::buildNetworkTab()
                 .arg(open ? T("ПОРТ ДОСТУПЕН") : T("ПОРТ НЕДОСТУПЕН"), detail));
             result->setStyleSheet(open
                 ? QStringLiteral("QLabel{padding:12px;border-radius:10px;background:#203b31;color:#9fe0b6;}")
-                : QStringLiteral("QLabel{padding:12px;border-radius:10px;background:#43282a;color:#ffaaaa;}") );
+                : QStringLiteral("QLabel{padding:12px;border-radius:10px;background:#363636;color:#ffaaaa;}") );
             test->setEnabled(true);
             socket->deleteLater();
         };
@@ -1497,7 +1497,7 @@ QWidget *SettingsPage::buildUsersTab()
         button->setFont(buttonFont);
         button->setMinimumSize(0, 36);
         button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        button->setStyleSheet(QStringLiteral("QPushButton { background:#1F242D; color:#ECF0F5; border:1px solid #343C4A; border-radius:5px; padding: 6px 10px; font-weight:600; } QPushButton:hover { background:#2A313D; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#111317; } QPushButton:disabled { background:#151921; color:#697282; border-color:#232936; }"));
+        button->setStyleSheet(QStringLiteral("QPushButton { background:#262626; color:#F0F0F0; border:1px solid #3F3F3F; border-radius:5px; padding: 6px 10px; font-weight:600; } QPushButton:hover { background:#343434; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#141414; } QPushButton:disabled { background:#1B1B1B; color:#767676; border-color:#2C2C2C; }"));
     }
     auto *buttons = new QGridLayout;
     buttons->setHorizontalSpacing(8);
@@ -1612,7 +1612,7 @@ QWidget *SettingsPage::buildUsersTab()
     vpnAutoReconnect->setChecked(QSettings().value(QStringLiteral("vpn/autoReconnect"), true).toBool());
 
     auto *vpnStatusLabel = new QLabel(T("Статус: отключено"), vpnBox);
-    vpnStatusLabel->setStyleSheet(QStringLiteral("color:#A0A8B7;font-weight:600;"));
+    vpnStatusLabel->setStyleSheet(QStringLiteral("color:#ACACAC;font-weight:600;"));
 
     auto *vpnDiagLog = new QPlainTextEdit(vpnBox);
     vpnDiagLog->setReadOnly(true);
@@ -1913,13 +1913,13 @@ QWidget *SettingsPage::buildUsersTab()
         if (QWidget *win = window()) {
             if (auto *lbl = win->findChild<QLabel *>(QStringLiteral("vpnStatusBarLabel"))) {
                 lbl->setText(T("VPN: выкл"));
-                lbl->setStyleSheet(QStringLiteral("color:#9AA3B2;font-weight:600;padding:0 8px;"));
+                lbl->setStyleSheet(QStringLiteral("color:#A6A6A6;font-weight:600;padding:0 8px;"));
             }
             if (auto *mw = qobject_cast<QMainWindow *>(win))
                 mw->statusBar()->showMessage(T("VPN отключён"), 4000);
         }
         vpnStatusLabel->setText(T("Статус: отключено"));
-        vpnStatusLabel->setStyleSheet(QStringLiteral("color:#A0A8B7;font-weight:600;"));
+        vpnStatusLabel->setStyleSheet(QStringLiteral("color:#ACACAC;font-weight:600;"));
         vpnConnectBtn->setEnabled(true);
         vpnDisconnectBtn->setEnabled(false);
         SecurityAudit::write(QStringLiteral("vpn_disconnected"), prof + QLatin1Char('/') + mode);
@@ -1936,11 +1936,11 @@ QWidget *SettingsPage::buildUsersTab()
     auto *switchRow = new QHBoxLayout;
     auto *switchLabel = new QLabel(T("Текущая учётная запись в сеансе: <b>%1</b>")
         .arg(Users::current().name.isEmpty() ? T("не выбран") : Users::current().name), this);
-    switchLabel->setStyleSheet(QStringLiteral("color:#D5DCE6;"));
+    switchLabel->setStyleSheet(QStringLiteral("color:#DEDEDE;"));
     auto *switchBtn = new QPushButton(T("Сменить пользователя…"), this);
     switchBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { background:#252C38; color:#F5B700; border:1px solid #F5B700; border-radius:5px; padding:6px 12px; font-weight:700; }"
-        "QPushButton:hover { background:#F5B700; color:#111317; }"
+        "QPushButton { background:#2F2F2F; color:#F5B700; border:1px solid #F5B700; border-radius:5px; padding:6px 12px; font-weight:700; }"
+        "QPushButton:hover { background:#F5B700; color:#141414; }"
     ));
     connect(switchBtn, &QPushButton::clicked, this, [this, switchLabel] {
         if (QWidget *w = window()) {
@@ -2098,9 +2098,9 @@ QWidget *SettingsPage::buildBackupTab()
     info->setWordWrap(true);
 
     auto *exportBtn = new QPushButton(T("Создать резервную копию…"), this);
-    exportBtn->setStyleSheet(QStringLiteral("QPushButton{background:#252C38;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#111317;}"));
+    exportBtn->setStyleSheet(QStringLiteral("QPushButton{background:#2F2F2F;color:#F5B700;border:1px solid #F5B700;border-radius:5px;padding:6px 14px;font-weight:700;}QPushButton:hover{background:#F5B700;color:#141414;}"));
     auto *importBtn = new QPushButton(T("Восстановить из копии…"), this);
-    importBtn->setStyleSheet(QStringLiteral("QPushButton{background:#1F242D;color:#ECF0F5;border:1px solid #343C4A;border-radius:5px;padding:6px 14px;font-weight:600;}QPushButton:hover{background:#2A313D;border-color:#F5B700;color:#FFD54F;}"));
+    importBtn->setStyleSheet(QStringLiteral("QPushButton{background:#262626;color:#F0F0F0;border:1px solid #3F3F3F;border-radius:5px;padding:6px 14px;font-weight:600;}QPushButton:hover{background:#343434;border-color:#F5B700;color:#FFD54F;}"));
 
     connect(exportBtn, &QPushButton::clicked, this, [this] {
         const QString def = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
@@ -2173,7 +2173,7 @@ QWidget *SettingsPage::buildLicenseTab()
         } else {
             editionTitle->setText(active ? T("PSVms — полная Pro-версия") : T("PSVms — DEMO ВЕРСИЯ"));
             editionTitle->setStyleSheet(active
-                ? QStringLiteral("font-size:10pt;font-weight:900;color:#63e6ee;")
+                ? QStringLiteral("font-size:10pt;font-weight:900;color:#A8A8A8;")
                 : QStringLiteral("font-size:10pt;font-weight:900;color:#ff4548;letter-spacing:0.5px;"));
             editionStatus->setText(status + (active
                 ? T("\nПолный доступ к функциям программы включён.")
@@ -2233,7 +2233,7 @@ QWidget *SettingsPage::buildLicenseTab()
         button->setFont(buttonFont);
         button->setMinimumSize(0, 38);
         button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        button->setStyleSheet(QStringLiteral("QPushButton { background:#1F242D; color:#ECF0F5; border:1px solid #343C4A; border-radius:5px; padding: 6px 12px; font-weight:600; } QPushButton:hover { background:#2A313D; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#111317; } QPushButton:disabled { background:#151921; color:#697282; border-color:#232936; }"));
+        button->setStyleSheet(QStringLiteral("QPushButton { background:#262626; color:#F0F0F0; border:1px solid #3F3F3F; border-radius:5px; padding: 6px 12px; font-weight:600; } QPushButton:hover { background:#343434; border-color:#F5B700; color:#FFD54F; } QPushButton:pressed { background:#F5B700; color:#141414; } QPushButton:disabled { background:#1B1B1B; color:#767676; border-color:#2C2C2C; }"));
     }
     auto *buttons = new QGridLayout;
     buttons->setHorizontalSpacing(8);
@@ -2346,37 +2346,37 @@ QPixmap makeCameraCellArtwork(const QSize &requestedSize)
 
     // Мягкий ореол и тонкие концентрические контуры.
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(20, 170, 255, 18));
+    p.setBrush(QColor(138, 138, 138, 18));
     p.drawEllipse(QRectF(5, 5, 118, 118));
     p.setBrush(Qt::NoBrush);
-    p.setPen(QPen(QColor(35, 190, 255, 78), 1.4));
+    p.setPen(QPen(QColor(145, 145, 145, 78), 1.4));
     p.drawEllipse(QRectF(10, 10, 108, 108));
-    p.setPen(QPen(QColor(45, 205, 255, 145), 1.2));
+    p.setPen(QPen(QColor(150, 150, 150, 145), 1.2));
     p.drawArc(QRectF(17, 17, 94, 94), 25 * 16, 285 * 16);
 
     // Корпус камеры и объектив — чистая геометрия без мелких деталей.
     QPainterPath body;
     body.addRoundedRect(QRectF(25, 43, 78, 49), 11, 11);
-    p.setBrush(QColor(25, 155, 235, 34));
-    p.setPen(QPen(QColor(70, 210, 255, 225), 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setBrush(QColor(130, 130, 130, 34));
+    p.setPen(QPen(QColor(162, 162, 162, 225), 3.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.drawPath(body);
     QPainterPath hood;
     hood.moveTo(39, 43); hood.lineTo(47, 32); hood.lineTo(76, 32); hood.lineTo(85, 43);
-    p.setBrush(QColor(20, 165, 245, 30));
+    p.setBrush(QColor(132, 132, 132, 30));
     p.drawPath(hood);
-    p.setBrush(QColor(10, 100, 190, 55));
-    p.setPen(QPen(QColor(85, 225, 255, 235), 2.6));
+    p.setBrush(QColor(100, 100, 100, 55));
+    p.setPen(QPen(QColor(170, 170, 170, 235), 2.6));
     p.drawEllipse(QRectF(47, 52, 34, 34));
-    p.setPen(QPen(QColor(35, 190, 255, 190), 1.6));
+    p.setPen(QPen(QColor(145, 145, 145, 190), 1.6));
     p.drawEllipse(QRectF(54, 59, 20, 20));
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(205, 250, 255, 220));
+    p.setBrush(QColor(230, 230, 230, 220));
     p.drawEllipse(QRectF(61, 66, 6, 6));
 
     // Небольшой индикатор состояния и опорная линия.
-    p.setBrush(QColor(35, 195, 255, 225));
+    p.setBrush(QColor(145, 145, 145, 225));
     p.drawEllipse(QRectF(88, 52, 5, 5));
-    p.setPen(QPen(QColor(35, 195, 255, 135), 1.5, Qt::SolidLine, Qt::RoundCap));
+    p.setPen(QPen(QColor(145, 145, 145, 135), 1.5, Qt::SolidLine, Qt::RoundCap));
     p.drawLine(QPointF(43, 101), QPointF(85, 101));
     return pm;
 }
@@ -2389,18 +2389,21 @@ static QIcon makeAppIcon()
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor("#171d24"));
+    p.setBrush(QColor("#1E1E1E"));
     p.drawRoundedRect(QRectF(5, 5, 118, 118), 27, 27);
-    p.setPen(QPen(QColor("#63e6ee"), 7, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setPen(QPen(QColor("#A8A8A8"), 7, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.setBrush(Qt::NoBrush);
     p.drawRoundedRect(QRectF(23, 29, 82, 57), 10, 10);
     p.drawLine(64, 87, 64, 101);
     p.drawLine(45, 103, 83, 103);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor("#63e6ee"));
+    p.setBrush(QColor("#A8A8A8"));
     p.drawEllipse(QRectF(56, 48, 16, 16));
-    p.setPen(QPen(QColor("#63e6ee"), 4, Qt::SolidLine, Qt::RoundCap));
+    p.setPen(QPen(QColor("#A8A8A8"), 4, Qt::SolidLine, Qt::RoundCap));
     p.drawArc(QRectF(42, 38, 44, 38), 25 * 16, 130 * 16);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor("#F5B700"));
+    p.drawEllipse(QRectF(91, 29, 13, 13));
     return QIcon(pm);
 }
 
@@ -2466,9 +2469,9 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
     m_toggleBtn->setCursor(Qt::PointingHandCursor);
     m_toggleBtn->setFixedSize(32, 32);
     m_toggleBtn->setStyleSheet(QStringLiteral(
-        "QToolButton{color:#8cecf4;background:rgba(8,22,32,175);border:1px solid rgba(66,205,224,125);"
+        "QToolButton{color:#C0C0C0;background:rgba(8,22,32,175);border:1px solid rgba(66,205,224,125);"
         "border-radius:10px;font-size:10pt;font-weight:500;padding:0;} "
-        "QToolButton:hover{color:#ffffff;background:rgba(36,169,193,55);border-color:#68e4ed;}"));
+        "QToolButton:hover{color:#ffffff;background:rgba(36,169,193,55);border-color:#ABABAB;}"));
     m_brandIcon = new QLabel(this);
     // Увеличенный фирменный знак в шапке боковой панели.
     m_brandIcon->setFixedSize(64, 64);
@@ -2500,7 +2503,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
 
     m_brand = new QLabel(QStringLiteral("PSVms"), this);
     m_brand->setObjectName(QStringLiteral("navBrand"));
-    m_brand->setStyleSheet(QStringLiteral("font-family:'Bahnschrift','Segoe UI',sans-serif;font-size:20px;font-weight:700;letter-spacing:1.1px;color:#F5B700;"));
+    m_brand->setStyleSheet(QStringLiteral("font-family:'Segoe UI','Microsoft YaHei UI',Arial,sans-serif;font-size:20px;font-weight:800;letter-spacing:0.6px;color:#F5B700;"));
     m_brand->setToolTip(App::title());
     head->setSpacing(5);
     head->addWidget(m_brandIcon, 0, Qt::AlignVCenter);
@@ -2531,7 +2534,7 @@ SideNav::SideNav(QWidget *parent) : QWidget(parent)
     m_userBtn->setMinimumHeight(40);
     m_userBtn->setMaximumHeight(44);
     m_userBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_userBtn->setStyleSheet(QStringLiteral("QPushButton#navUserBtn{padding:5px 10px;font-family:'Segoe UI',sans-serif;font-size:9.5pt;font-weight:600;letter-spacing:0.1px;text-align:left;}"));
+    m_userBtn->setStyleSheet(QStringLiteral("QPushButton#navUserBtn{padding:5px 10px;font-family:'Segoe UI','Microsoft YaHei UI',sans-serif;font-size:9.5pt;font-weight:600;letter-spacing:0.1px;text-align:left;}"));
     m_userBtn->setIconSize(QSize(36, 36));
     m_bottomLayout->addWidget(m_userBtn);
 
@@ -2572,7 +2575,7 @@ static QIcon makeNavigationIcon(const QString &kind)
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     const QColor gold("#F5B700");
-    const QColor light("#d7dce1");
+    const QColor light("#DCDCDC");
     p.setPen(QPen(gold, 2.25, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.setBrush(Qt::NoBrush);
     if (kind == QStringLiteral("▣")) { // мониторинг: экран с четырьмя каналами
@@ -2642,7 +2645,7 @@ static QIcon makeCameraStatusIcon()
     const QColor gold("#FFD54F");
     // Чёткий силуэт камеры: корпус, объектив и небольшой индикатор записи.
     p.setPen(QPen(cyan, 2.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    p.setBrush(QColor(15, 68, 83, 125));
+    p.setBrush(QColor(49, 49, 49, 125));
     p.drawRoundedRect(QRectF(5.5, 13, 27, 22), 5, 5);
     QPolygonF lens;
     lens << QPointF(33, 19) << QPointF(43, 14) << QPointF(43, 34) << QPointF(33, 29);
@@ -3009,7 +3012,7 @@ void SideNav::paintEvent(QPaintEvent *e)
     Q_UNUSED(e);
     QPainter p(this);
     p.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    p.fillRect(rect(), QColor(4, 12, 24, 72));
+    p.fillRect(rect(), QColor(14, 14, 14, 72));
     if (!m_wallpaper.isNull()) {
         const QSize hostSize = size();
         if (m_wallpaperScaled.isNull() || m_wallpaperHostSize != hostSize) {
@@ -3026,13 +3029,13 @@ void SideNav::paintEvent(QPaintEvent *e)
         const QRect source(cropX, cropY, qMin(width(), fitted.width()-cropX), qMin(height(), fitted.height()-cropY));
         p.drawPixmap(rect(), fitted, source);
         // Оставляем изображение камеры различимым даже под пунктами меню.
-        p.fillRect(rect(), QColor(5, 10, 16, 24));
+        p.fillRect(rect(), QColor(10, 10, 10, 24));
         QLinearGradient shade(0, 0, width(), 0);
-        shade.setColorAt(0.0, QColor(7, 12, 18, 38));
-        shade.setColorAt(1.0, QColor(7, 12, 18, 14));
+        shade.setColorAt(0.0, QColor(12, 12, 12, 38));
+        shade.setColorAt(1.0, QColor(12, 12, 12, 14));
         p.fillRect(rect(), shade);
     }
-    p.setPen(QPen(QColor(48, 190, 226, 185), 1));
+    p.setPen(QPen(QColor(137, 137, 137, 185), 1));
     p.drawLine(width()-1, 0, width()-1, height());
 }
 
@@ -3176,7 +3179,7 @@ static QPixmap psvmsSplashPixmap()
     if (source.isNull()) {
         qWarning() << "PSVms splash image could not be loaded:" << imagePath;
         QPixmap fallback(1200, 675);
-        fallback.fill(QColor("#0D0F12"));
+        fallback.fill(QColor("#101010"));
         QPainter painter(&fallback);
         painter.setPen(QColor("#F5B700"));
         painter.setFont(QFont(QStringLiteral("Segoe UI"), 58, QFont::Black));
@@ -3226,7 +3229,7 @@ protected:
 
         // Тонкая сетка видеостены поверх заставки для атмосферы систем безопасности
         p.save();
-        p.setPen(QPen(QColor(68, 86, 114, 34), 1.0));
+        p.setPen(QPen(QColor(120, 120, 120, 30), 1.0));
         const int cols = 8;
         const int rows = 5;
         for (int c = 1; c < cols; ++c) {
@@ -3259,7 +3262,7 @@ protected:
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(229, 57, 53, int(qBound(40.0, recAlpha, 250.0))));
         p.drawEllipse(QPointF(m + 36.0, m + 11.0), 5.5, 5.5);
-        p.setPen(QColor(236, 240, 245, 225));
+        p.setPen(QColor(238, 238, 238, 225));
         p.setFont(QFont(QStringLiteral("Segoe UI"), 9, QFont::Bold));
         p.drawText(QRectF(m + 48.0, m + 1.0, 150.0, 20.0), Qt::AlignLeft | Qt::AlignVCenter,
                    QStringLiteral("REC • SECURE VMS"));
@@ -3294,7 +3297,7 @@ protected:
         // Шкала прогресса и статус инициализации модулей безопасности/видеонаблюдения
         const QRectF track(330.0, 442.0, 540.0, 6.0);
         p.setPen(Qt::NoPen);
-        p.setBrush(QColor(34, 42, 54, 230));
+        p.setBrush(QColor(46, 46, 46, 230));
         p.drawRoundedRect(track, 3.0, 3.0);
 
         const qreal barW = 165.0;
@@ -3308,11 +3311,11 @@ protected:
                 ? T("PSVms  •  ИНИЦИАЛИЗАЦИЯ ВИДЕОПОТОКОВ RTSP / ONVIF / ISAPI")
                 : T("PSVms  •  ПОДГОТОВКА ВИДЕОСТЕНЫ И АРХИВА ЗАПИСЕЙ"));
 
-        p.setPen(QColor(236, 240, 245, 240));
+        p.setPen(QColor(238, 238, 238, 240));
         p.setFont(QFont(QStringLiteral("Segoe UI"), 10, QFont::DemiBold));
         p.drawText(QRectF(180.0, 462.0, w - 360.0, 28.0), Qt::AlignCenter, stageText);
 
-        p.setPen(QColor(156, 168, 186, 210));
+        p.setPen(QColor(168, 168, 168, 210));
         p.setFont(QFont(QStringLiteral("Segoe UI"), 8, QFont::Normal));
         p.drawText(QRectF(180.0, 492.0, w - 360.0, 22.0), Qt::AlignCenter,
                    T("SECURITY SURVEILLANCE PLATFORM  •  CONTROL & MONITORING"));
