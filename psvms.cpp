@@ -1410,6 +1410,7 @@ public:
     explicit LiveViewPage(CameraManager *mgr, QWidget *parent = nullptr);
     VideoGrid *grid() const { return m_grid; }
     void openArchiveForSelectedCamera();
+    void exportArchiveIntervalForCamera(const QString &cameraId, qint64 fromMs, qint64 toMs);
 
 signals:
     void addCameraRequested();
@@ -1604,6 +1605,7 @@ public:
 
     bool open(const QString &dbPath);   // открывает соединение и создаёт схему
     void close();
+    QString connectionName() const { return m_conn; }
     QString lastError() const { return m_lastError; }
 
     // Запись
@@ -2812,6 +2814,10 @@ struct PtzTarget {
 // (команда либо выполнится, либо нет; повторная отправка безопасна).
 void ptzContinuousMove(QNetworkAccessManager *nam, const PtzTarget &target, double x, double y, double zoom);
 void ptzStop(QNetworkAccessManager *nam, const PtzTarget &target);
+void ptzGotoPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetToken,
+                   double speedPan = 0.5, double speedTilt = 0.5, double speedZoom = 0.5);
+void ptzSetPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetName,
+                  const QString &presetToken = QString());
 
 // ======================================================================
 // core/rtsp_probe.h
@@ -2946,6 +2952,16 @@ void setLastUserId(const QString &id);
 } // namespace Users
 
 namespace SecurityAudit { void write(const QString &event, const QString &details = QString()); }
+
+QString maskCredentialsInUrl(const QString &rawUrl);
+bool writeArchiveRangeManifest(const QString &cameraId,
+                               const QString &outputPath,
+                               qint64 fromMs,
+                               qint64 toMs,
+                               const QList<SegmentInfo> &segments,
+                               QString *errorOut);
+void purgeClosedSegmentsByPolicy(const QString &connName, const QString &storageRoot, qint64 minFreeBytes);
+bool canCurrentUserPerformAction(const QString &actionKey);
 
 // ======================================================================
 // ======================================================================

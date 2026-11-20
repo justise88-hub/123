@@ -2419,6 +2419,7 @@ void LiveViewPage::exportArchiveIntervalForCamera(const QString &cameraId, qint6
 }
 
 
+
 void LiveViewPage::rebuildTemplatesMenu()
 {
     QMenu *menu = m_tplBtn->menu();

@@ -2421,7 +2421,7 @@ void ptzStop(QNetworkAccessManager *nam, const PtzTarget &target)
     send(nam, target, body);
 }
 
-void ptzGotoPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetToken, double speedPan = 0.5, double speedTilt = 0.5, double speedZoom = 0.5)
+void ptzGotoPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetToken, double speedPan, double speedTilt, double speedZoom)
 {
     if (!target.valid() || presetToken.trimmed().isEmpty())
         return;
@@ -2439,7 +2439,7 @@ void ptzGotoPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QS
     send(nam, target, body);
 }
 
-void ptzSetPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetName, const QString &presetToken = QString())
+void ptzSetPreset(QNetworkAccessManager *nam, const PtzTarget &target, const QString &presetName, const QString &presetToken)
 {
     if (!target.valid())
         return;

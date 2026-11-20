@@ -195,3 +195,7 @@
 
 ## Проверка целостности в CI при сборке Windows (v37)
 - В рабочий процесс `.github/workflows/build-windows.yml` добавлен шаг проверки контрольных сумм из `SHA256SUMS.txt` перед установкой зависимостей и сборкой.
+
+## Исправление ошибок компиляции MSVC в модулях UI и сервисов (v38)
+- В `psvms.cpp` добавлены опережающие объявления функций `canCurrentUserPerformAction`, `maskCredentialsInUrl`, `writeArchiveRangeManifest`, `purgeClosedSegmentsByPolicy`, `ptzGotoPreset`, `ptzSetPreset`, а также методы `LiveViewPage::exportArchiveIntervalForCamera()` и `RecordingIndex::connectionName()`.
+- Реализация `LiveViewPage::exportArchiveIntervalForCamera()` вынесена за пределы конструктора `LiveViewPage` в область видимости класса.
