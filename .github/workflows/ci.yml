@@ -1,0 +1,223 @@
+
+# PS PassMaster PRO — CI / проверка и сборка
+# Сохранить в репозитории по пути: .github/workflows/ci.yml
+#
+# Что делает workflow:
+# 1. Запускает проверки при push и Pull Request.
+# 2. Устанавливает Python и зависимости проекта.
+# 3. Проверяет синтаксис Python-файлов.
+# 4. Запускает pytest и публикует результаты в логах Actions.
+# 5. При запуске вручную или создании тега v* может выполнить сборку Windows.
+# 6. Загружает папки dist / release / output как артефакт GitHub Actions.
+#
+# ВАЖНО:
+# - Workflow не заменяет проверку на реальном ПК с Windows и принтере Magicard.
+# - Для сборки должен существовать один из скриптов:
+#   build_windows.ps1, build.ps1, build_windows.bat, build.bat.
+# - Если в проекте используется другое имя скрипта сборки, добавьте его
+#   в список BUILD_SCRIPTS ниже.
+# - Секреты, пароли, токены и сертификаты не хранить в репозитории.
+
+name: PS PassMaster PRO — CI и Windows Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: 'Выполнить сборку Windows и загрузить артефакт'
+        required: false
+        default: false
+        type: boolean
+      run_full_tests:
+        description: 'Запустить полный набор pytest (рекомендуется)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pspassmaster-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Проверка исходного кода и тесты
+    runs-on: windows-2022
+    timeout-minutes: 25
+
+    steps:
+      - name: Получить исходный код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            pyproject.toml
+
+      - name: Обновить pip
+        shell: pwsh
+        run: python -m pip install --upgrade pip
+
+      - name: Установить зависимости приложения
+        shell: pwsh
+        run: |
+          if (Test-Path 'requirements.txt') {
+            python -m pip install -r requirements.txt
+          } else {
+            Write-Host 'requirements.txt не найден — пропускаю установку зависимостей приложения.'
+          }
+
+      - name: Установить зависимости разработки и тестирования
+        shell: pwsh
+        run: |
+          if (Test-Path 'requirements-dev.txt') {
+            python -m pip install -r requirements-dev.txt
+          }
+          python -m pip install pytest
+
+      - name: Проверить наличие основных каталогов
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'app')) {
+            throw 'Не найден каталог app. Проверьте структуру репозитория.'
+          }
+          if (-not (Test-Path 'tests')) {
+            Write-Warning 'Каталог tests не найден. Шаг pytest может завершиться без тестов.'
+          }
+
+      - name: Проверить синтаксис Python
+        shell: pwsh
+        run: |
+          $targets = @()
+          if (Test-Path 'app') { $targets += 'app' }
+          if (Test-Path 'tests') { $targets += 'tests' }
+          if (Test-Path 'run_asset_sync.py') { $targets += 'run_asset_sync.py' }
+          if ($targets.Count -eq 0) { throw 'Не найдены файлы для compileall.' }
+          python -m compileall -q $targets
+
+      - name: Запустить тесты и сохранить JUnit-отчёт
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_full_tests }}
+        shell: pwsh
+        run: python -m pytest -q --junitxml=test-results.xml
+
+      - name: Загрузить отчёт тестов
+        if: always() && hashFiles('test-results.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pspassmaster-test-results-${{ github.run_number }}
+          path: test-results.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-build:
+    name: Сборка Windows-релиза
+    runs-on: windows-2022
+    needs: tests
+    timeout-minutes: 35
+
+    # Сборка запускается по тегу v* либо вручную с включённым build_release.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && inputs.build_release)
+
+    steps:
+      - name: Получить исходный код
+        uses: actions/checkout@v4
+
+      - name: Установить Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            pyproject.toml
+
+      - name: Установить зависимости и инструменты сборки
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path 'requirements.txt') {
+            python -m pip install -r requirements.txt
+          }
+          if (Test-Path 'requirements-dev.txt') {
+            python -m pip install -r requirements-dev.txt
+          }
+          # PyInstaller устанавливается как резервный инструмент.
+          # Основная логика сборки остаётся в скрипте проекта.
+          python -m pip install pyinstaller
+
+      - name: Найти и выполнить скрипт сборки
+        shell: pwsh
+        run: |
+          $buildScripts = @(
+            'build_windows.ps1',
+            'build.ps1',
+            'build_windows.bat',
+            'build.bat'
+          )
+          $selected = $null
+          foreach ($candidate in $buildScripts) {
+            if (Test-Path $candidate) {
+              $selected = $candidate
+              break
+            }
+          }
+          if (-not $selected) {
+            throw 'Скрипт сборки не найден. Добавьте build_windows.ps1, build.ps1, build_windows.bat или build.bat либо измените список в ci.yml.'
+          }
+          Write-Host "Запускаю скрипт: $selected"
+          if ($selected.EndsWith('.ps1')) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $selected
+            if ($LASTEXITCODE -ne 0) { throw "Сборка завершилась с кодом $LASTEXITCODE" }
+          } else {
+            cmd.exe /c $selected
+            if ($LASTEXITCODE -ne 0) { throw "Сборка завершилась с кодом $LASTEXITCODE" }
+          }
+
+      - name: Проверить, что сборка создала результат
+        shell: pwsh
+        run: |
+          $outputDirs = @('dist', 'release', 'output')
+          $found = @()
+          foreach ($dir in $outputDirs) {
+            if (Test-Path $dir) {
+              $items = Get-ChildItem $dir -Recurse -File -ErrorAction SilentlyContinue
+              if ($items.Count -gt 0) { $found += $dir }
+            }
+          }
+          if ($found.Count -eq 0) {
+            throw 'Сборка не создала файлы в dist, release или output. Проверьте скрипт сборки и пути вывода.'
+          }
+          Write-Host "Найдены результаты сборки: $($found -join ', ')"
+
+      - name: Загрузить Windows-сборку
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS-PassMaster-PRO-Windows-${{ github.ref_name }}-${{ github.run_number }}
+          path: |
+            dist/**
+            release/**
+            output/**
+          if-no-files-found: error
+          retention-days: 30
