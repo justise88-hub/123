@@ -1,0 +1,213 @@
+
+name: PS GuardPRO - CI and Windows Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+    tags:
+      - "v*"
+
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: "Build Windows release"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: psguardpro-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  tests:
+    name: Code validation and tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+
+          if (Test-Path "requirements.txt") {
+            python -m pip install -r requirements.txt
+          }
+
+          if (Test-Path "requirements-dev.txt") {
+            python -m pip install -r requirements-dev.txt
+          }
+
+          python -m pip install pytest
+
+      - name: Check project structure
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "app")) {
+            throw "Application folder app/ not found."
+          }
+
+          if (-not (Test-Path "tests")) {
+            throw "Tests folder tests/ not found."
+          }
+
+      - name: Check Python syntax
+        shell: pwsh
+        run: |
+          python -m compileall -q app tests
+
+          if (Test-Path "run_asset_sync.py") {
+            python -m compileall -q run_asset_sync.py
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Python syntax validation failed."
+          }
+
+      - name: Run automated tests
+        shell: pwsh
+        run: |
+          python -m pytest -q --junitxml=test-results.xml
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Automated tests failed."
+          }
+
+      - name: Upload test report
+        if: always() && hashFiles('test-results.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS-GuardPRO-Test-Report
+          path: test-results.xml
+          retention-days: 14
+
+  windows-build:
+    name: Build PS GuardPRO for Windows
+    runs-on: windows-latest
+    needs: tests
+    timeout-minutes: 45
+
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        inputs.build_release
+      )
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+
+          if (Test-Path "requirements.txt") {
+            python -m pip install -r requirements.txt
+          }
+
+          python -m pip install pyinstaller
+
+      - name: Build Windows application
+        shell: pwsh
+        run: |
+          $scripts = @(
+            "build_windows.ps1",
+            "build.ps1",
+            "scripts/build_windows.ps1",
+            "scripts/build.ps1"
+          )
+
+          $buildScript = $null
+
+          foreach ($script in $scripts) {
+            if (Test-Path $script) {
+              $buildScript = $script
+              break
+            }
+          }
+
+          if ($buildScript) {
+            Write-Host "Building with $buildScript"
+
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Build script failed."
+            }
+          }
+          else {
+            $spec = Get-ChildItem -Path . -Filter "*.spec" -File |
+              Select-Object -First 1
+
+            if (-not $spec) {
+              throw "No build script or PyInstaller spec found."
+            }
+
+            python -m PyInstaller --noconfirm --clean $spec.FullName
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "PyInstaller build failed."
+            }
+          }
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          $folders = @("dist", "release", "output")
+          $files = @()
+
+          foreach ($folder in $folders) {
+            if (Test-Path $folder) {
+              $files += Get-ChildItem $folder -Recurse -File
+            }
+          }
+
+          if ($files.Count -eq 0) {
+            throw "No Windows build files found."
+          }
+
+          Write-Host "Build output verified."
+
+      - name: Upload Windows release
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS-GuardPRO-Windows-${{ github.run_number }}
+          path: |
+            dist/**
+            release/**
+            output/**
+          if-no-files-found: error
+          retention-days: 30
