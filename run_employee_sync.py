@@ -4,7 +4,7 @@ from pathlib import Path
 from app.employee_sync import sync_once, queue_existing_employees
 
 def main():
-    p=argparse.ArgumentParser(description="PS PassMaster PRO — синхронизация сотрудников по локальной сети")
+    p=argparse.ArgumentParser(description="PS GuardPRO — синхронизация сотрудников по локальной сети")
     p.add_argument("--db", required=True, help="Путь к Employees/employees.sqlite3")
     p.add_argument("--url", required=True, help="HTTPS URL сервера, например https://192.168.1.10:8765")
     p.add_argument("--ca", required=True, help="Сертификат CA/сервера для проверки TLS")

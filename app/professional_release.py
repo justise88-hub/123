@@ -1,4 +1,4 @@
-"""Read-only readiness checks and dashboard metrics for PS PassMaster PRO 7.x."""
+"""Read-only readiness checks and dashboard metrics for PS GuardPRO 7.x."""
 from __future__ import annotations
 
 import sqlite3

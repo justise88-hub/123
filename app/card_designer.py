@@ -153,7 +153,7 @@ if _QT_AVAILABLE:
             self.side = "front"
             self.graphics: dict[int, QGraphicsRectItem] = {}
             self.current_index = None
-            self.setWindowTitle("Редактор макета Magicard — PS PassMaster PRO")
+            self.setWindowTitle("Редактор макета Magicard — PS GuardPRO")
             self.resize(1120, 720)
             root = QVBoxLayout(self)
             top = QHBoxLayout(); top.addWidget(QLabel(f"Шаблон: {self.source.name}")); top.addStretch()

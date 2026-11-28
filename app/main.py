@@ -50,7 +50,7 @@ from professional_release import readiness_checks, summarize_checks
 from support_bundle import create_support_bundle
 from runtime_safety import acquire_single_instance_lock
 
-APP_NAME = "PS PassMaster PRO 8.9.0 — Employee LAN Sync"
+APP_NAME = "PS GuardPRO 8.10.0 — Access & Security"
 DEVELOPER_NAME = "P.Sveshnikov"
 
 # Estimated portrait frame measured proportionally from the user's HUB screenshot.
@@ -70,7 +70,7 @@ else:
 # with portable.flag next to the EXE. Source/development runs remain self-contained.
 if getattr(sys, "frozen", False) and not (ROOT / "portable.flag").exists():
     _local = Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "share")
-    APP_DATA_DIR = _local / "PSPassMasterPRO"
+    APP_DATA_DIR = _local / "PSGuardPRO"
 else:
     APP_DATA_DIR = ROOT
 
@@ -630,7 +630,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(APP_NAME)
-        icon_path = RESOURCES_DIR / "PS_PassMaster.ico"
+        icon_path = RESOURCES_DIR / "PS_GuardPRO.ico"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
         screen = QApplication.primaryScreen()
@@ -921,7 +921,7 @@ class MainWindow(QMainWindow):
 
         # 0. Professional home dashboard: concise entry points and live status.
         dashboard = QWidget(); dl = QVBoxLayout(dashboard); dl.setContentsMargins(18, 18, 18, 18); dl.setSpacing(12)
-        hero = QLabel("PS PassMaster PRO 8.9.0")
+        hero = QLabel("PS GuardPRO 8.10.0")
         hero.setStyleSheet("font-size:22pt;font-weight:800;color:#F2C230;")
         dl.addWidget(hero)
         subtitle = QLabel("Профессиональная рабочая среда для выпуска пропусков · Magicard HUB · разработчик P.Sveshnikov")
@@ -980,7 +980,7 @@ class MainWindow(QMainWindow):
     def open_network_settings(self):
         """Configure LAN deployment profile; live record synchronization is a later stage."""
         dlg = QDialog(self)
-        dlg.setWindowTitle("Сетевой режим PS PassMaster PRO")
+        dlg.setWindowTitle("Сетевой режим PS GuardPRO")
         dlg.resize(620, 430)
         layout = QVBoxLayout(dlg)
         intro = QLabel(
@@ -1460,7 +1460,7 @@ class MainWindow(QMainWindow):
 
     def open_first_run_wizard(self):
         """Guided, non-destructive first-run checklist; can be reopened anytime."""
-        dlg = QDialog(self); dlg.setWindowTitle("Мастер первого запуска PS PassMaster PRO"); dlg.resize(620, 430)
+        dlg = QDialog(self); dlg.setWindowTitle("Мастер первого запуска PS GuardPRO"); dlg.resize(620, 430)
         layout = QVBoxLayout(dlg)
         heading = QLabel("Подготовим программу к работе")
         heading.setStyleSheet("font-size:17pt;font-weight:700;color:#F2C230;"); layout.addWidget(heading)
@@ -1479,7 +1479,7 @@ class MainWindow(QMainWindow):
         self.settings["first_run_wizard_seen"] = True; save_json(SETTINGS_FILE, self.settings)
 
     def show_about(self):
-        QMessageBox.about(self, APP_NAME, f"<h3>PS PassMaster PRO — Access Card Studio</h3><p>Версия {APP_VERSION}</p><p>Реестр сотрудников, подготовка портретов и создание карточек .card для Magicard HUB.</p><p>Печать выполняется штатными средствами Magicard HUB.</p><p><b>Разработчик:</b> {DEVELOPER_NAME}</p>")
+        QMessageBox.about(self, APP_NAME, f"<h3>PS GuardPRO — Access Control & Security Platform</h3><p>Версия {APP_VERSION}</p><p>Реестр сотрудников, подготовка портретов и создание карточек .card для Magicard HUB.</p><p>Печать выполняется штатными средствами Magicard HUB.</p><p><b>Разработчик:</b> {DEVELOPER_NAME}</p>")
 
     def apply_settings(self):
         self.settings.setdefault("update_source_url", DEFAULT_UPDATE_SOURCE_URL)
@@ -2704,7 +2704,7 @@ class MainWindow(QMainWindow):
         dlg.setWindowTitle("Единый центр управления доступом")
         dlg.resize(1120, 700)
         root = QVBoxLayout(dlg)
-        intro = QLabel("Контроль состояния пропусков и локальная история изменений. Это учётная панель PS PassMaster PRO, а не подключение к контроллеру дверей.")
+        intro = QLabel("Контроль состояния пропусков и локальная история изменений. Это учётная панель PS GuardPRO, а не подключение к контроллеру дверей.")
         intro.setWordWrap(True)
         root.addWidget(intro)
         stats = QLabel()
@@ -3102,7 +3102,7 @@ class MainWindow(QMainWindow):
         backup.clicked.connect(make_encrypted); layout.addWidget(backup)
         restore_enc = QPushButton("Восстановить из зашифрованной копии…")
         def restore_encrypted():
-            source, _ = QFileDialog.getOpenFileName(dlg, "Выберите зашифрованную копию", str(BACKUP_DIR), "PS PassMaster encrypted (*.pspmenc)")
+            source, _ = QFileDialog.getOpenFileName(dlg, "Выберите зашифрованную копию", str(BACKUP_DIR), "PS GuardPRO encrypted (*.pspmenc)")
             if not source: return
             password, ok = QInputDialog.getText(dlg, "Расшифровка копии", "Введите пароль резервной копии:", QLineEdit.Password)
             if not ok: return
@@ -3313,7 +3313,7 @@ class MainWindow(QMainWindow):
             return preferred
         except OSError:
             base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "share")
-            fallback = base / "PSPassMasterPRO" / "Templates"
+            fallback = base / "PSGuardPRO" / "Templates"
             fallback.mkdir(parents=True, exist_ok=True)
             return fallback
 
@@ -3350,7 +3350,7 @@ class MainWindow(QMainWindow):
             self.template_path_label.setText(str(managed))
             self.statusBar().showMessage(f"Шаблон Magicard HUB подключён: {managed.name}", 8000)
             if not silent:
-                QMessageBox.information(self, APP_NAME, f"Шаблон HUB найден и скопирован в PS PassMaster PRO.\n\nИсточник: {source}\nКопия: {managed}\n\nОригинал не изменён.")
+                QMessageBox.information(self, APP_NAME, f"Шаблон HUB найден и скопирован в PS GuardPRO.\n\nИсточник: {source}\nКопия: {managed}\n\nОригинал не изменён.")
             return managed
         except Exception as exc:
             logging.exception("Automatic HUB template import failed")
@@ -3661,7 +3661,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Пакет HUB: создано {len(created)}, пропущено {len(skipped)}",10000)
             summary = f"Создано файлов .card: {len(created)}"
             # Persist a batch manifest next to the card files for traceability.
-            manifest_path = Path(out_dir) / f"PS_PassMaster_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            manifest_path = Path(out_dir) / f"PS_GuardPRO_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             with manifest_path.open("w", encoding="utf-8-sig", newline="") as manifest_file:
                 writer = csv.writer(manifest_file, delimiter=";")
                 writer.writerow(["Результат", "Файл / сотрудник", "Подробности"])
@@ -3958,9 +3958,9 @@ def create_splash_pixmap():
     painter.fillRect(0, 0, 6, 300, QColor("#F2C230"))
     painter.fillRect(6, 0, 2, 300, QColor("#D9A91E"))
 
-    icon_path = RESOURCES_DIR / "PS_PassMaster.png"
+    icon_path = RESOURCES_DIR / "PS_GuardPRO.png"
     if not icon_path.exists():
-        icon_path = RESOURCES_DIR / "PS_PassMaster.ico"
+        icon_path = RESOURCES_DIR / "PS_GuardPRO.ico"
     icon = QPixmap(str(icon_path))
     if not icon.isNull():
         icon = icon.scaled(76, 76, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -3987,7 +3987,7 @@ def create_splash_pixmap():
     painter.setPen(QColor("#AEB6BE"))
     small_font = QFont("Arial", 8)
     painter.setFont(small_font)
-    painter.drawText(44, 283, "EMPLOYEE ID & ACCESS CARD STUDIO  •  P.Sveshnikov  •  8.9.0")
+    painter.drawText(44, 283, "EMPLOYEE ID & ACCESS CARD STUDIO  •  P.Sveshnikov  •  8.10.0")
     painter.end()
     return pixmap
 
@@ -3997,7 +3997,7 @@ if __name__ == "__main__":
         # OS-level lock prevents two GUI instances from writing to the same local data.
         _instance_lock = acquire_single_instance_lock(APP_DATA_DIR / "pspassmaster.instance.lock")
         if _instance_lock is None:
-            print("PS PassMaster PRO уже запущена. Повторный запуск отменён.", file=sys.stderr)
+            print("PS GuardPRO уже запущена. Повторный запуск отменён.", file=sys.stderr)
             sys.exit(0)
         try:
             QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
@@ -4005,13 +4005,13 @@ if __name__ == "__main__":
             pass  # Qt 6 already enables per-monitor DPI scaling by default.
         app = QApplication(sys.argv)
         app.setApplicationName(APP_NAME)
-        app.setApplicationDisplayName("PS PassMaster PRO")
+        app.setApplicationDisplayName("PS GuardPRO")
         app.setOrganizationName("P.Sveshnikov")
-        app.setWindowIcon(QIcon(str(RESOURCES_DIR / "PS_PassMaster.ico")))
+        app.setWindowIcon(QIcon(str(RESOURCES_DIR / "PS_GuardPRO.ico")))
         if sys.platform == "win32":
             try:
                 import ctypes
-                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PSveshnikov.PSPassMasterPRO")
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PSveshnikov.PSGuardPRO")
             except Exception:
                 pass
         # Use the Windows-native UI font; Qt scales point sizes for monitor DPI.

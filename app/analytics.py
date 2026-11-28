@@ -1,4 +1,4 @@
-"""Offline analytics and quality summaries for PS PassMaster PRO."""
+"""Offline analytics and quality summaries for PS GuardPRO."""
 from __future__ import annotations
 from collections import Counter
 from datetime import date

@@ -1,4 +1,4 @@
-"""Portable, verifiable migration bundles for PS PassMaster PRO server data.
+"""Portable, verifiable migration bundles for PS GuardPRO server data.
 
 The bundle can carry the LAN change journal and an optional legacy employee
 SQLite database plus its companion files. It deliberately excludes TLS private

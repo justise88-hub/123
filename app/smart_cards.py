@@ -1,4 +1,4 @@
-"""Offline smart-card lifecycle helpers for PS PassMaster PRO."""
+"""Offline smart-card lifecycle helpers for PS GuardPRO."""
 from __future__ import annotations
 
 CARD_TYPES = ("Постоянный", "Временный", "Посетитель")

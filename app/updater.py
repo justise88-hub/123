@@ -1,9 +1,9 @@
-"""Safe, opt-in updater for PS PassMaster PRO.
+"""Safe, opt-in updater for PS GuardPRO.
 
 Update manifest format (hosted over HTTPS):
 {
   "version": "4.0.0",
-  "package": "PS_PassMaster_PRO_4.0.0_update.zip",
+  "package": "PS_GuardPRO_4.0.0_update.zip",
   "sha256": "<64 hex chars>",
   "notes": ["Исправления и улучшения"]
 }
@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QProgressBar, QMessageBox, QPlainTextEdit
 )
 
-APP_VERSION = "8.9.0"
+APP_VERSION = "8.10.0"
 DEFAULT_UPDATE_SOURCE_URL = "https://disk.yandex.ru/d/3-8I5L5VUQpoEA"
 USER_DATA_DIRS = {
     "Config", "Logs", "Cache", "History", "Presets", "Exports",
@@ -55,7 +55,7 @@ def _yandex_public_download_url(public_key: str, remote_path: str) -> str:
     query = urllib.parse.urlencode({"public_key": public_key, "path": "/" + remote_path.lstrip("/")})
     request = urllib.request.Request(
         endpoint + "?" + query,
-        headers={"User-Agent": "PS-PassMaster-PRO-Updater/1.0", "Accept": "application/json"},
+        headers={"User-Agent": "PS-GuardPRO-Updater/1.0", "Accept": "application/json"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         payload = json.loads(response.read(1024 * 1024).decode("utf-8-sig"))
@@ -75,7 +75,7 @@ def _read_manifest(source_url: str) -> tuple[dict, bool]:
         manifest_url = source_url
     request = urllib.request.Request(
         manifest_url,
-        headers={"User-Agent": "PS-PassMaster-PRO-Updater/1.0", "Accept": "application/json"},
+        headers={"User-Agent": "PS-GuardPRO-Updater/1.0", "Accept": "application/json"},
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         manifest = json.loads(response.read(1024 * 1024).decode("utf-8-sig"))
@@ -122,7 +122,7 @@ class UpdateWorker(QThread):
 
             self.staging_root.mkdir(parents=True, exist_ok=True)
             archive_path = self.staging_root / "update.zip"
-            req = urllib.request.Request(package_url, headers={"User-Agent": "PS-PassMaster-PRO-Updater/1.0"})
+            req = urllib.request.Request(package_url, headers={"User-Agent": "PS-GuardPRO-Updater/1.0"})
             hasher = hashlib.sha256()
             total = 0
             with urllib.request.urlopen(req, timeout=60) as response, archive_path.open("wb") as out:
@@ -181,13 +181,13 @@ class UpdateWorker(QThread):
 class UpdateDialog(QDialog):
     def __init__(self, parent, app_root: Path, settings: dict):
         super().__init__(parent)
-        self.setWindowTitle("Обновление PS PassMaster PRO")
+        self.setWindowTitle("Обновление PS GuardPRO")
         self.setMinimumWidth(560)
         self.app_root = Path(app_root)
         self.settings = settings
         self.worker = None
         self.latest_result = None
-        self.staging_root = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PS PassMaster PRO" / "UpdateStaging"
+        self.staging_root = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PS GuardPRO" / "UpdateStaging"
 
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel(f"Установленная версия: <b>{APP_VERSION}</b>"))
@@ -273,7 +273,7 @@ class UpdateDialog(QDialog):
         app_exe = Path(sys.executable).resolve()
         install_dir = app_exe.parent
         ps1 = self.staging_root / "install_update.ps1"
-        backup_root = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PS PassMaster PRO" / "UpdateBackups" / (result["version"] + "-" + str(os.getpid()))
+        backup_root = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PS GuardPRO" / "UpdateBackups" / (result["version"] + "-" + str(os.getpid()))
         stage = Path(result["staging_program"])
         # PowerShell waits for this process to exit, backs up replaced files, overlays the new runtime,
         # and restores the backup if copying fails. User data directories are not touched.
@@ -346,4 +346,4 @@ try {
 
     def _worker_failed(self, message):
         self.status.setText("Не удалось выполнить обновление.")
-        QMessageBox.warning(self, "Обновление PS PassMaster PRO", message)
+        QMessageBox.warning(self, "Обновление PS GuardPRO", message)

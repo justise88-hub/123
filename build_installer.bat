@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if not exist "dist\PS_PassMaster_PRO\PS_PassMaster_PRO.exe" (
+if not exist "dist\PS_GuardPRO\PS_GuardPRO.exe" (
   echo Сначала запустите build_windows.bat
   pause
   exit /b 1
@@ -15,7 +15,7 @@ if not exist "%ISCC%" (
   pause
   exit /b 1
 )
-"%ISCC%" "PS_PassMaster_PRO.iss"
+"%ISCC%" "PS_GuardPRO.iss"
 if errorlevel 1 (
   echo Ошибка создания установщика.
   pause

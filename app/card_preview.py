@@ -136,7 +136,7 @@ if _QT:
         def __init__(self, design:dict, employee:dict, photo_path=None, parent=None):
             super().__init__(parent)
             self.design=design; self.employee=employee; self.photo_path=photo_path
-            self.setWindowTitle("Предпросмотр пропуска — PS PassMaster PRO")
+            self.setWindowTitle("Предпросмотр пропуска — PS GuardPRO")
             self.resize(1050,760)
             root=QVBoxLayout(self)
             top=QHBoxLayout(); top.addWidget(QLabel(f"Сотрудник: {employee.get('full_name','—')} · № {employee.get('badge_number','—')}")); top.addStretch()

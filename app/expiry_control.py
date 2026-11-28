@@ -1,4 +1,4 @@
-"""Expiry renewal and access-status history for PS PassMaster PRO."""
+"""Expiry renewal and access-status history for PS GuardPRO."""
 from __future__ import annotations
 import sqlite3
 from datetime import datetime

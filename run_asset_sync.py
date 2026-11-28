@@ -1,4 +1,4 @@
-"""One-shot asset manifest sync for PS PassMaster PRO. Token is read from environment."""
+"""One-shot asset manifest sync for PS GuardPRO. Token is read from environment."""
 import argparse
 import os
 import sys
@@ -8,7 +8,7 @@ from app.asset_manifest_sync import scan_assets, sync_assets
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="PS PassMaster PRO — синхронизация фотографий и шаблонов Magicard")
+    parser = argparse.ArgumentParser(description="PS GuardPRO — синхронизация фотографий и шаблонов Magicard")
     parser.add_argument("--db", required=True, help="Путь к локальной базе SQLite приложения")
     parser.add_argument("--assets", required=True, help="Корневой каталог фотографий и .card шаблонов")
     parser.add_argument("--url", required=True, help="HTTPS-адрес главного компьютера/сервера")

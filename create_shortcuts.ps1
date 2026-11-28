@@ -1,14 +1,14 @@
 $ErrorActionPreference = 'Stop'
 $AppDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Exe = Join-Path $AppDir 'PS_PassMaster_PRO.exe'
-$Icon = Join-Path $AppDir 'Resources\PS_PassMaster.ico'
-if (!(Test-Path $Exe)) { throw "Не найден файл: $Exe. Скопируйте этот скрипт в папку с PS_PassMaster_PRO.exe." }
+$Exe = Join-Path $AppDir 'PS_GuardPRO.exe'
+$Icon = Join-Path $AppDir 'Resources\PS_GuardPRO.ico'
+if (!(Test-Path $Exe)) { throw "Не найден файл: $Exe. Скопируйте этот скрипт в папку с PS_GuardPRO.exe." }
 if (!(Test-Path $Icon)) { throw "Не найден значок: $Icon" }
 $Wsh = New-Object -ComObject WScript.Shell
 $Desktop = [Environment]::GetFolderPath('Desktop')
-$StartMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'PS PassMaster PRO'
+$StartMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'PS GuardPRO'
 New-Item -ItemType Directory -Force -Path $StartMenu | Out-Null
-foreach ($Target in @((Join-Path $Desktop 'PS PassMaster PRO.lnk'), (Join-Path $StartMenu 'PS PassMaster PRO.lnk'))) {
+foreach ($Target in @((Join-Path $Desktop 'PS GuardPRO.lnk'), (Join-Path $StartMenu 'PS GuardPRO.lnk'))) {
   $Shortcut = $Wsh.CreateShortcut($Target)
   $Shortcut.TargetPath = $Exe
   $Shortcut.WorkingDirectory = $AppDir

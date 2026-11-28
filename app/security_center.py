@@ -1,4 +1,4 @@
-"""Offline security helpers for PS PassMaster PRO."""
+"""Offline security helpers for PS GuardPRO."""
 from __future__ import annotations
 import hashlib, hmac, os, sqlite3, struct
 from pathlib import Path

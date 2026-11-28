@@ -106,7 +106,7 @@ def export_csv(path, report):
     """Write a UTF-8 BOM CSV workbook with summary, expiry and movement sections."""
     with open(path, "w", newline="", encoding="utf-8-sig") as stream:
         writer = csv.writer(stream, delimiter=";")
-        writer.writerow(["PS PassMaster PRO — Сводный отчёт"])
+        writer.writerow(["PS GuardPRO — Сводный отчёт"])
         writer.writerow(["Период", report["period_start"], report["period_end"]])
         writer.writerow(["Сотрудников", report["employee_count"]])
         writer.writerow(["Период предупреждения, дней", report["warning_days"]])
@@ -145,7 +145,7 @@ def export_xlsx(path, report):
     wb = Workbook()
     summary = wb.active
     summary.title = "Сводка"
-    summary.append(["PS PassMaster PRO — Сводный отчёт"])
+    summary.append(["PS GuardPRO — Сводный отчёт"])
     summary.append(["Период", report["period_start"], report["period_end"]])
     summary.append(["Сотрудников", report["employee_count"]])
     summary.append(["Период предупреждения, дней", report["warning_days"]])
@@ -212,7 +212,7 @@ def export_pdf(path, report, font_path):
     styles.add(ParagraphStyle(name="PSTitle", parent=styles["Title"], fontName="PSDejaVu", fontSize=16, leading=20, alignment=TA_CENTER))
     styles.add(ParagraphStyle(name="PSHeading", parent=styles["Heading2"], fontName="PSDejaVu", fontSize=11, leading=14))
     doc = SimpleDocTemplate(str(path), pagesize=landscape(A4), rightMargin=12*mm, leftMargin=12*mm, topMargin=12*mm, bottomMargin=12*mm)
-    story = [Paragraph("PS PassMaster PRO — Сводный отчёт", styles["PSTitle"]), Spacer(1, 4*mm),
+    story = [Paragraph("PS GuardPRO — Сводный отчёт", styles["PSTitle"]), Spacer(1, 4*mm),
              Paragraph(f"Период: {report['period_start']} — {report['period_end']} · Сотрудников: {report['employee_count']} · Предупреждение: {report['warning_days']} дн.", styles["PSBody"]), Spacer(1, 4*mm),
              Paragraph("Сроки действия", styles["PSHeading"])]
     data = [["Статус", "Количество"]] + [[label, str(report["expiry_counts"].get(key, 0))] for key, label in STATUS_LABELS.items()]

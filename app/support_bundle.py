@@ -1,4 +1,4 @@
-"""Privacy-preserving diagnostic bundle for PS PassMaster PRO.
+"""Privacy-preserving diagnostic bundle for PS GuardPRO.
 
 The bundle deliberately excludes employee records, photographs, templates, PINs,
 settings values, audit rows, and raw application logs.
@@ -42,7 +42,7 @@ def build_diagnostics(*, app_version: str, app_data_dir: Path, db_path: Path,
     return {
         "schema": 1,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "application": {"name": "PS PassMaster PRO", "version": str(app_version)},
+        "application": {"name": "PS GuardPRO", "version": str(app_version)},
         "runtime": {
             "python": platform.python_version(),
             "implementation": platform.python_implementation(),
@@ -88,7 +88,7 @@ def create_support_bundle(destination: Path, *, app_version: str, app_data_dir: 
                                     db_path=db_path, template_path=template_path,
                                     hub_path=hub_path)
     note = (
-        "PS PassMaster PRO — диагностический пакет\n\n"
+        "PS GuardPRO — диагностический пакет\n\n"
         "Пакет содержит только технические сведения о версии, среде выполнения, "
         "наличии компонентов и результат проверки целостности SQLite.\n"
         "База сотрудников, фотографии, шаблоны, настройки, PIN, журнал действий "

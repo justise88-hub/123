@@ -4,7 +4,7 @@ cd /d "%~dp0"
 if errorlevel 1 goto :error
 
 echo ================================================
-echo   PS PassMaster PRO 8.9.0 - сборка Windows-программы
+echo   PS GuardPRO 8.10.0 - сборка Windows-программы
 echo ================================================
 echo.
 
@@ -27,9 +27,9 @@ if not exist ".venv\Lib\site-packages\cv2\data\haarcascade_frontalface_default.x
 
 echo Сборка приложения через PyInstaller...
 ".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --windowed --onedir ^
-  --name "PS_PassMaster_PRO" ^
+  --name "PS_GuardPRO" ^
   --contents-directory "." ^
-  --icon "Resources\PS_PassMaster.ico" ^
+  --icon "Resources\PS_GuardPRO.ico" ^
   --add-data "Resources;Resources" ^
   --add-data "Templates;Templates" ^
   --add-data ".venv\Lib\site-packages\cv2\data\haarcascade_frontalface_default.xml;cv2\data" ^
@@ -59,13 +59,13 @@ echo Сборка приложения через PyInstaller...
   "app\main.py"
 if errorlevel 1 goto :error
 
-if not exist "dist\PS_PassMaster_PRO\Resources" mkdir "dist\PS_PassMaster_PRO\Resources"
+if not exist "dist\PS_GuardPRO\Resources" mkdir "dist\PS_GuardPRO\Resources"
 if errorlevel 1 goto :error
-copy /Y "create_shortcuts.ps1" "dist\PS_PassMaster_PRO\create_shortcuts.ps1" >nul
+copy /Y "create_shortcuts.ps1" "dist\PS_GuardPRO\create_shortcuts.ps1" >nul
 if errorlevel 1 goto :error
 
 echo.
-echo Сборка завершена: dist\PS_PassMaster_PRO\PS_PassMaster_PRO.exe
+echo Сборка завершена: dist\PS_GuardPRO\PS_GuardPRO.exe
 echo Для создания Setup.exe запустите build_installer.bat.
 echo.
 exit /b 0

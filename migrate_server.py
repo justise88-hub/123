@@ -1,11 +1,11 @@
-"""Create, verify or restore a PS PassMaster PRO server migration bundle."""
+"""Create, verify or restore a PS GuardPRO server migration bundle."""
 import argparse
 from pathlib import Path
 from app.server_migration import create_migration_bundle, verify_migration_bundle, restore_migration_bundle
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PS PassMaster PRO — перенос серверных данных")
+    parser = argparse.ArgumentParser(description="PS GuardPRO — перенос серверных данных")
     sub = parser.add_subparsers(dest="command", required=True)
     exp = sub.add_parser("export", help="Создать пакет переноса")
     exp.add_argument("--sync-db", required=True, type=Path, help="SQLite-журнал LAN-сервиса")

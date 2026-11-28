@@ -1,4 +1,4 @@
-"""Full offline backup, verification and recovery for PS PassMaster PRO."""
+"""Full offline backup, verification and recovery for PS GuardPRO."""
 from __future__ import annotations
 
 import hashlib
@@ -103,7 +103,7 @@ def create_full_backup(database, app_data_dir, templates_dir, destination, passp
         manifest = {
             "format": FORMAT, "format_version": FORMAT_VERSION,
             "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-            "application": "PS PassMaster PRO", "database": "database/employees.sqlite3",
+            "application": "PS GuardPRO", "database": "database/employees.sqlite3",
             "photo_map": photo_map, "missing_photos": missing_photos,
             "files": manifest_files,
         }
@@ -134,7 +134,7 @@ def inspect_full_backup(source, passphrase=None, temp_dir=None):
             candidate = temp_root / "decrypted.zip"
             decrypt_backup(source, candidate, passphrase)
         if not zipfile.is_zipfile(candidate):
-            raise ValueError("Файл не является архивом резервной копии PS PassMaster PRO.")
+            raise ValueError("Файл не является архивом резервной копии PS GuardPRO.")
         with zipfile.ZipFile(candidate, "r") as zf:
             bad = zf.testzip()
             if bad:
