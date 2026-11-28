@@ -21,8 +21,14 @@ def readiness_checks(*, app_data_dir: Path, template_path: Path, db_path: Path,
     db = Path(db_path)
     if db.exists():
         try:
-            with sqlite3.connect(f"file:{db.as_posix()}?mode=ro", uri=True, timeout=5) as con:
+            # sqlite3.Connection.__exit__ commits/rolls back but does NOT close
+            # the connection. Explicitly close it so Windows can release the
+            # database file before temporary-directory cleanup.
+            con = sqlite3.connect(f"file:{db.as_posix()}?mode=ro", uri=True, timeout=5)
+            try:
                 result = con.execute("PRAGMA quick_check").fetchone()
+            finally:
+                con.close()
             ok = bool(result and result[0] == "ok")
             checks.append({"name": "База сотрудников", "status": "ok" if ok else "error",
                            "details": "Проверка SQLite пройдена." if ok else str(result[0] if result else "Нет результата")})
